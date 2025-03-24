@@ -40,11 +40,11 @@ Semi-ineractive Walk-through of the process for **preprocessing**, **collecting*
 What you need to code-along:
 
   - Laptop with Rstudio installed
+  - Download slides, code-along, and example data from corresponding GitHub Repo [https://github.com/gesiscss/DataDonationWorkshop2025LMU](https://github.com/gesiscss/DataDonationWorkshop2025LMU)
   - Install WhatsR package and all dependencies
     - for dev version:<br>
     `devtools::install_github("gesiscss/WhatsR")`
-  - install all [ChatDashboard Dependencies](https://github.com/gesiscss/ChatDashboard/blob/master/README.md)
-  - Download slides, code-along, and example data from corresponding [GitHub Repo](https://github.com/gesiscss/DataDonationWorkshop2025LMU)
+  - install all ChatDashboard Dependencies from [https://github.com/gesiscss/ChatDashboard/](https://github.com/gesiscss/ChatDashboard)
   - OPTIONAL: [Export your own WhatsApp data](https://faq.whatsapp.com/1180414079177245/?cms_platform=android&helpref=platform_switcher&locale=et_EE)
 
 
