@@ -50,8 +50,9 @@ What you need to code-along:
 
 # Overview:<br> WhatsApp Chat Log Data
 
+<font size="5">
+
 ## Why Chat Log Data?{.smaller}
-<br>
 Chat log data offer extraordinarily rich, high quality data about everyday interpersonal interactions.
 
 - MIMs are abundant in close relationships<br> [@kemp2020digital;@kemp2025digital]
@@ -65,7 +66,12 @@ Chat log data offer extraordinarily rich, high quality data about everyday inter
   - reduced reactivity
   - reduced social-desirability bias
   
+</font>
+  
 ## Previous Research{.smaller}
+
+<font size="5">
+
 - Linguistics<br> [@ueberwasser2017whats;@verheijen2016collecting]
 
 - Alcohol Consumption<br> [@jensen2021text]
@@ -82,6 +88,8 @@ Chat log data offer extraordinarily rich, high quality data about everyday inter
 
 - Misinformation & Fake News<br> [@defreitasmelo2020can;@garimella2020images]
 
+</font>
+
 ## Why WhatsApp?{.smaller}
 <br>
 
@@ -95,6 +103,8 @@ Chat log data offer extraordinarily rich, high quality data about everyday inter
 
 ::: {.column width="35%"}
 
+<font size="5">
+
 - most popular MIM in the world<br> [@kemp2025digital]
 
 - 2 Billion monthly active users<br> [@montag2015smartphone;@kemp2025digital]
@@ -106,6 +116,8 @@ Chat log data offer extraordinarily rich, high quality data about everyday inter
 - Option for chat-log exports
 
 - Retrospective, highly granular communication data
+
+</font>
 
 :::
 
@@ -245,6 +257,8 @@ WhatsApp Chat log data can be obtained in at least 2 different ways:
 
 ### With media{style="text-align: center"}
 
+<font size="5">
+
 - Zip archive 
 - The last 10.000 messages in the conversation as a.txt file
 - Media files from all included messages
@@ -255,11 +269,15 @@ WhatsApp Chat log data can be obtained in at least 2 different ways:
 - Sent locations (Google Maps links in .txt file)
 - phone and video calls through WhatSapp are indicated in the .txt file
 
+</font>
+
 :::
 
 ::: {.column width="50%"}
 
 ### Without media{style="text-align: center"}
+
+<font size="5">
 
 - Single .txt file or Zip archive (if contacts are included)
 - last 40.000 messages in the chat
@@ -267,6 +285,8 @@ WhatsApp Chat log data can be obtained in at least 2 different ways:
 - Sent contacts are included as .vcf files
 - file names of media files are still included in the .txt file as reference
 - phone and video calls through WhatSapp are indicated in the .txt file
+ 
+</font>
  
 :::
 
@@ -532,7 +552,6 @@ WhatsApp Chat log data can be obtained in at least 2 different ways:
 06.04.19, 10:49 - Frank:Alles klar, danke euch!
   </pre>
 </div>
-
 <div class="codeblock">
   <pre>
 06.04.19, 09:14 - Frank: Hallo alle, ich nehme an einer wiss. Studie Teil und spende diesen Chatverlauf - <br> Bitte repostet den folgenden Text wenn ihr zustimmt.<br> Wenn nicht werden eure Daten automatisch gelöscht.
@@ -550,6 +569,8 @@ WhatsApp Chat log data can be obtained in at least 2 different ways:
 
 ## ChatDashboard for Data Donation Studies{.smaller}
 
+<font size="5">
+
 - `WhatsR` can be used to parse, anonymize and check consent for donated WhatsApp chat logs
 - However, we still need a way for the data to get from the participant to the researchers
 - That is: While WhatsR can act as a backend for data processing, we still need a **frontend**
@@ -561,7 +582,9 @@ WhatsApp Chat log data can be obtained in at least 2 different ways:
   - Give Participants feedback about own behavior
   - Allow participants to manually remove data before donation
   - Link data donations to corresponding survey data
-  
+
+</font>  
+
 ## Researcher Setup{.smaller}
 
 Steps to set up the ChatDashboard for a data donation study:
@@ -578,8 +601,7 @@ Steps to set up the ChatDashboard for a data donation study:
   - You need a free [RStudio Server Instance](https://posit.co/download/rstudio-server/)
   - repeat steps for local installation
   - use [DashboardTester](https://github.com/gesiscss/DashboardTester) for user simulation
-  
-Congrats, you can now use ChatDashboard for data donations!
+
 
 ## Modifiability
 
