@@ -83,6 +83,9 @@ You can find several pre-generated chat logs in the `data` folder. You can use t
 
 ## Generating a dummy chat log
 
+You can also use WhatsR to generate your own dummy chat log file.
+Depending the parameters you chose, these files can get quite large and might have weird combinations of features, but the default settings should be relatively safe.
+
 ```{r warning=FALSE, message=FALSE, eval=FALSE}
 
 # checking documentation
@@ -128,7 +131,7 @@ The chat log file is saved as a `.txt` file and can be opened with any text edit
 
 ## General Structure
 
-In the most basic form, a chat log file consists of a list of messages with **3 part each**
+In the most basic form, a chat log file consists of a list of messages with **3 parts each**
 
 1. <span class="bg-blue">**Timestamp**</span>: Date and time when the message was sent
 
@@ -136,7 +139,7 @@ In the most basic form, a chat log file consists of a list of messages with **3 
 saved the sender in their phone contacts, this will display the senders phone number in this format `+49 1234567890`. If the sender is saved in the
 telephone contacts, the corresponding name will be displayed.
 
-3. <span class="bg-yellow">**Message Body:**</span> The message that was send. Includes emoji, smileys, links, locations. For voice or video calls, an indicator is present in the text file. The same is true for sent media files or attached files.
+3. <span class="bg-yellow">**Message Body:**</span> The message that was sent. Includes emoji, smileys, links, locations etc.. For voice or video calls, an indicator is present in the text file.
 
 `Example Structure for: Android, German, 24h time format:`
 
@@ -206,7 +209,7 @@ As mentioned before, the chat log file can be exported with or without media fil
 
 ## User vs. System generated messages
 
-WhatsApp adds some information into chat logs as system messages. These are problematic for parsing because they do have a timestamp but not sender. 
+WhatsApp adds some information into chat logs as system messages. These are problematic for parsing because they do have a timestamp but not a sender. 
 
 `Example Structure for: Android, German, 24h time format:`
 
@@ -232,7 +235,7 @@ it more difficult to parse data from chat logs exported from phones with differe
 ::: {.callout-tip}
 The language setting of the exporting phone only affects the messages inserted by WhatsApp into the chat.
 The actual message content is **always** in the language that the people also write in. This can result in a chat where the
-system messages and media indicators are in a different language than the actual chat messages.
+system messages and media indicators are in a different language than the actual chat messages!
 :::
 
 
@@ -364,7 +367,7 @@ Unfortunately, chats exported from Android and iOS phones have different structu
 
 ### Timestamps
 
-For both phones, the timestamp depends mainly on the setting of the exporting phone. The most frequent formats chosen are the 24h format and the AM/PM format. The 24h format is more common in Europe, while the AM/PM format is more common in the US. However, even for the same timestamps, iOS and Android can have different formattings. For example, the following timestamps are the same but formatted differently:
+For both operating systems, the timestamp format depends mainly on the  datetime setting of the exporting phone. However, even for the same timestamp formats, iOS and Android can have different formattings. For example, the following timestamps are both in 24h format (in the phone settings) but still different on iOs and Android:
 
 ::: {.panel-tabset}
 
@@ -400,7 +403,7 @@ For both phones, the timestamp depends mainly on the setting of the exporting ph
 
 :::
 
-As you can see, Chats exported from iPhones in 24h format have seconds in the timestamp, while chats exported from Android phones do not. This is a small difference but can cause problems when parsing the data and also represents a different level of time resolution.
+As you can see, chats exported from iPhones in 24h format have seconds in the timestamp, while chats exported from Android phones do not. This is a small difference but can cause problems when parsing the data and also represents a different level of time resolution.
 
 
 ### Media file indicators
@@ -483,7 +486,19 @@ For Android and iOs, the indicator strings for media files are different. This i
 
 # Parsing Chat log file(s)
 
-To effectively parse a WhatsApp chat log, we need to know the operating system of the device that exported the chat log, the language setting of the exporting phone, the date-time format of the operating phone and whether the file was exported including media files or not. Because WhatsApp data donations do not provide us with this meta-information, we need to infer it from the structure of the chat logs automatically, and then use the settings to parse the data.
+To effectively parse a WhatsApp chat log, we need to know:
+
+- the operating system of the device that exported the chat log
+
+- the language setting of the exporting phone
+
+- the date-time format of the exporting phone
+
+- and whether the file was exported including media files or not.
+
+Because WhatsApp data donations do not provide us with this meta-information directly, we need to infer them from the structure of the chat logs automatically, and then use them  to parse the data correspondingly.
+
+Below, you can find a schematic process for parsing a chat log file based on different features.
 
 ```{mermaid, echo = FALSE}
  flowchart TD
@@ -521,12 +536,12 @@ To effectively parse a WhatsApp chat log, we need to know the operating system o
 
 ```
 
-To do this by hand, we would need to:
+To do this parsing by hand, we would need to:
 
 - build our own list of Regexes to detect WhatsApp System Messages
-- RegExes detect all varieties of timestamps
-- RegExes to detect media files
-- Do all of this for multiple operating systems, languages, time settings and for exports including and not including media files
+- create RegExes to detect all varieties of timestamps
+- create RegExes to detect media files
+- Do all of this for all combinations of operating systems, languages, time settings and for exports including and not including media files
 
 Luckily, the `WhatsR` package includes all of this already and does it as automatically as possible! Lets use it to parse a chat log file!
 
@@ -557,7 +572,7 @@ head(data)
 ```
 
 :::{callout-tip}
-If you're using the GitHub dev version of `WhatsR`, the parsed dataframe also contains the inferred phone language, detected operating system, and time the exported chat log was parsed. The CRAN version of the package does not contain this feature yet.
+If you're using the GitHub dev version of `WhatsR`, the parsed dataframe also contains the inferred phone language, detected operating system, and time the exported chat log was parsed as attributes. The CRAN version of the package does not contain this feature yet.
 :::
 
 ```{r warning=FALSE, message=FALSE}
@@ -571,12 +586,17 @@ as.POSIXct(attributes(data)$parsedAt)
 
 # Explore your own data
 
-You can now use the `parse_chat` function to parse the example chat files or your own chat files.
+You can now use the `parse_chat` function to parse the example chat files or your own chat files. You can also compare your own chat logs and the provided example chat logs:
 
  - Is everything parsed correctly?
  - Does your data contain all variables?
  - Is there anything that is going wrong?
  - Is there anything you are missing?
+ 
+:::{.callout-important}
+The structure of WhatsApp chat log files changes multiple times per year, unannouncedly and unpredictably. If the parser does not work for you exported chat file, the structure has changed again since the last update of the package. Please open an issue on the GitHub repository of the package, so I can try to update the parser accordingly.
+
+:::
 
 ## Parsing Data
 
