@@ -1,0 +1,369 @@
+---
+title: "Data Donation Workshop - Notebook III: <br> Installing and adapting ChatDashboard"
+author: "Julian Kohne"
+date: today
+execute:
+  dir: "."
+format:
+  html:
+    df-print: kable
+    css: styles.css
+    theme: flatly      
+    toc: true          
+    code-fold: false
+    embed-resources: true
+---
+
+# Setup
+
+First, we need to download the ChatDashboard repository from GitHub. We will then install the required packages and adapt the code to our needs.
+
+# Getting ChatDashboard
+
+## For this Workshop
+
+For this workshop, the ChatDashboard app is already included in this repository. You can find it in the folder `ChatDashboard-app`.
+
+## Getting it online
+
+- go to [https://github.com/gesiscss/ChatDashboard](https://github.com/gesiscss/ChatDashboard)
+
+- Click on the green "Code" button and download the repository as a ZIP file
+
+![](../Images/screenshot3.png)
+
+- Unzip the file and move the folder to the top-level folder with the workshop materials
+
+- If you prefer on know your way around Git, you can also clone the repository
+
+# Installing System Dependencies
+
+We will use some R-packages that rely on specific system dependencies that you might need to install manually if your are using Linux or MacOS
+
+### Windows
+
+If you are using Windows, you should not have to install any system dependencies manually
+
+### Linux
+
+This should be run in the Terminal, not RStudio
+
+```bash
+sudo apt-get update
+sudo apt-get install -y \
+  libxml2-dev \
+  libpng-dev \
+  libsodium-dev \
+  libcurl4-openssl-dev \
+  libmagick++-dev \
+  libharfbuzz-dev \
+  libfribidi-dev \
+  libjpeg-dev \
+  default-jre \
+  default-jdk \
+  gfortran \
+  libblas-dev \
+  liblapack-dev \
+  libgdal-dev
+```
+### MacOS
+
+This should be run in the Terminal, not RStudio
+
+```bash
+brew update
+brew install \
+  libxml2 \
+  libpng \
+  libsodium \
+  curl \
+  imagemagick \
+  harfbuzz \
+  fribidi \
+  jpeg \
+  gcc \
+  openblas \
+  lapack \
+  gdal
+
+# Install Java (both JRE and JDK) using Homebrew Cask:
+brew install --cask temurin
+```
+
+# Installing R Packages
+
+ChatDashboard uses several additional R-packages on top of WhatsR to display data, make it interactive, and ensure encryption. Let's install these;
+
+```{r, eval = FALSE}
+# Installing WhatsR package from GitHub
+library(devtools)
+devtools::install_github("gesiscss/WhatsR")
+
+# Installing ChatDashboard Dependencies
+Chatdashboard_dep <- c("anytime",
+                       "crosstalk",
+                       "cyphr",
+                       "digest",
+                       "DT",
+                       "fontawesome",
+                       "ggplot2",
+                       "ggwordcloud",
+                       "keyring",
+                       "readODS",
+                       "rsconnect",
+                       "shiny",
+                       "shinymanager",
+                       "shinythemes",
+                       "shinyjs",
+                       "shinyalert",
+                       "shinyTime",
+                       "shinyWidgets",
+                       "slickR",
+                       "waiter",
+                       "fs")
+                       
+Chatdashboard_new <- Chatdashboard_dep[!(Chatdashboard_dep %in% installed.packages()[,"Package"])]
+if(length(Chatdashboard_new)) install.packages(Chatdashboard_new)
+
+```
+
+# Creating Encryption Keys
+
+To enable ChatDashboard to encrypt the data when it is donated and to decrypt it again, researcher need to create their own set of RSA encryption Keys. RSA is an asymmetric encryption, meaning that there are two keys: one for encryption and one for decryption. We can store the key for encryption on the server because it can't be used to decrypt the data again. The key for decryption should be stored securely on a local machine.
+
+```{r}
+# loading library
+library(cyphr)
+
+# This will create two RSA keys, public (id_rsa.pub) and private (id_rsa), in a new folder called: Researcher_Keypair
+path <- cyphr::ssh_keygen("./Researcher_Keypair",password = FALSE)
+dir(path)
+
+# This will create a second set of two RSA keys, public (id_rsa.pub) and private (id_rsa), in a new folder called: Server_Keypair
+path <- cyphr::ssh_keygen("./Server_Keypair",password = FALSE)
+dir(path)
+
+```
+
+### Key Exchange
+You now need to exchange the public keys (the files with the .pub ending), so that
+the public key of the researcher goes into the Server_Keypair folder while the public key of the server
+goes into the Researcher_Keypair folder. You can simply move the files around in your file browser for that.
+
+:::{.callout-important}
+
+Be careful not to overwrite files when exchanging keys! It's easiest to
+
+1. Move one pub file one folder upwards
+
+2. Move the other pub file from one folder to the other
+
+3. Move the first pub file into the new folder
+
+:::
+
+To be save, you can also do this directly in R-code
+
+```{r}
+library(fs)
+
+# moving pub file from researcher folder one level up
+file_move(path = "./Researcher_Keypair/id_rsa.pub",
+          new_path = "./id_rsa.pub")
+
+# moving pub file from server folder to researcher folder
+file_move(path = "./Server_Keypair/id_rsa.pub",
+          new_path = "./Researcher_Keypair/id_rsa.pub")
+
+# moving pub file from researcher folder to server folder
+# moving pub file from researcher folder one level up
+file_move(path = "./id_rsa.pub",
+          new_path = "./Server_Keypair/id_rsa.pub")
+
+```
+
+### Testing
+
+You can test if you did everything correctly by trying to encrypt a file and then decrypting it again.
+
+```{r}
+# defining keypair for encryption
+key_pair_server <- cyphr::keypair_openssl(pub = "./Server_Keypair", key = "./Server_Keypair", envelope = TRUE)
+
+# encrypting file
+encrypted_mtcars <- encrypt_object(mtcars,key_pair_server)
+
+# checking encrypted file (this should be random bits and bytes)
+head(encrypted_mtcars)
+```
+
+Now lets check if we can decrypt the file again
+
+```{r}
+# defining keypair for decryption
+key_pair_researcher <- cyphr::keypair_openssl(pub = "./Researcher_Keypair", key = "./Researcher_Keypair", envelope = TRUE)
+
+# decrypting file
+decrypted_mtcars <- decrypt_object(encrypted_mtcars,key_pair_researcher)
+
+# checking
+head(decrypted_mtcars)
+identical(mtcars,decrypted_mtcars) # this should return TRUE
+
+```
+
+If everything works, we can now move the contents of the `Server_keypair` folder to the `ServerFolder` in the ChatDashboard directory.
+
+```{r}
+# moving pub file rom Server_keypair folder to ServerFolder
+file_move(path = "./Server_Keypair/id_rsa",
+          new_path = "../ChatDashboard-app/ServerFolder/id_rsa")
+
+# moving id_rsa.pub file from Server_keypair folder to ServerFolder
+file_move(path = "./Server_Keypair/id_rsa.pub",
+          new_path = "../ChatDashboard-app/ServerFolder/id_rsa.pub")
+
+```
+
+:::{.callout-important}
+Save the `Researcher_Keypair` folder in a safe place. You will need it to decrypt the data later on. If you lose the files in this folder,
+you will never be enable to decrypt the donated data again! Do not these files on your server if you deploy ChatDashboard online
+:::
+
+# Checking out ChatDashboard locally
+
+Now that we have set-up everything, you can try to run ChatDashboard locally! But first, we need to adapt some settings in the file `app.R` file from the ChatDashboard folder. To do so, simple open the file in RStudio and adapt the following lines:
+
+## On windows
+
+Most servers run on Linux. If you are using a Windows machine locally, you need to change the way ChatDashboard saved encrypted files to the disk. To do so, you need to change the following line in the `app.R` file:
+
+Comment out line `1256` by putting a `#` in front of it. Save the file afterwards. The line should look like this afterwards:
+
+```{r, eval =F}
+# saving object to disk in encrypted form (This is specific to Linux servers, would need to be adapted on Windows - see below)
+#saveRDS(rv$copy2_encrypted,file = paste("./UserData/",LocalFilename, sep = ""))
+```
+
+Then, you should **remove** the `#` from lines `1259` and `1260` and uncomment them. The lines should look like this afterwards:
+
+```{r, eval =F}
+# saving object to disk in encrypted form (Windows)
+LocalFilename <- gsub(":","_",LocalFilename)
+saveRDS(rv$copy2_encrypted,file = paste(".//UserData//",LocalFilename, sep = ""))
+```
+
+If you want to deploy ChatDashboard online after testing locally, you should revert these changes if your Server is running Linux.
+
+## On Linux or MacOS
+
+The app should run fine for you locally without any changes if you are on a Unix based system.
+
+# Running ChatDashboard
+
+You can now run ChatDashboard locally by clicking on the `Run App` button with the green arrow on the top right of your script window in RStudio where the code for `app.R` is displayed. Feel free to go through the data donation with your own data or one of the example datasets. The data will not leave your computer and will be encrypted and saved to the disk. You can close the app after you donated data.
+
+# Donated Data
+
+After you donated data, you can find the encrypted data in the `UserData` folder in the ChatDashboard directory. The data is encrypted and can only be decrypted with the private key from the `Researcher_Keypair` folder. Let's check it out.
+
+```{r, include = FALSE}
+# for the qmd to run correctly, we need to shadow generate a suitable donor file, encrypted with the right RSA keys here
+# This is only for generating the HTML and should neither be visible nor be run by participants
+
+test_data <- WhatsR::parse_chat("/home/juko/Desktop/GoogleDrive/Arbeit/LMU Data donation Workshop 2025/Presentation//ChatDashboard-app/TestingChat.txt")
+attributes(test_data)$donor <- "Donor1"
+
+# encrypting file
+encrypted_test_data <- encrypt_object(test_data,key_pair_server)
+
+# saving file as RDS
+saveRDS(encrypted_test_data, file = "/home/juko/Desktop/GoogleDrive/Arbeit/LMU Data donation Workshop 2025/Presentation//ChatDashboard-app/UserData/Donor1_2021-09-01-13-45-45_123456789.rds", ver = 2)
+
+```
+
+```{r}
+list.files("../ChatDashboard-app/UserData")
+```
+
+The file name consists of multiple elements
+
+1) The Username of the participant who donated the data. This would be the survey ID in a real-world scenario.
+
+2) The date and time when the data was donated
+
+3) A hash of the data. This is a unique identifier for the data that was donated and helps identify exact duplicates.
+
+```{r}
+strsplit(list.files("../ChatDashboard-app/UserData")[1],split = "_")
+
+```
+
+Lets open the data
+
+```{r}
+data_encrypted <- readRDS(normalizePath(list.files("../ChatDashboard-app/UserData", full.names = TRUE)[1]))
+head(data_encrypted)
+```
+
+We need do decrypt the data to make it readable
+
+```{r}
+# defining keypair for decryption
+key_pair_researcher <- cyphr::keypair_openssl(pub = "./Researcher_Keypair", key = "./Researcher_Keypair", envelope = TRUE)
+
+# decrypting file
+data_decrypted <- decrypt_object(data_encrypted,key_pair_researcher)
+
+# checking
+head(data_decrypted)
+```
+## Checking attributes of dataframe
+
+The attributes of the dataframe can be used for multiple purposes
+
+- the `$names` attribute can be used to identify the columns of the dataframe that are still included. All columns not included were manuall removed by the participant.
+
+- the `$row.names` attribute can be used to identify the row numbers of the dataframe. Any gaps in the row numbers indicate that rows were removed manually by the participant.
+
+- the `$donor` attribute can be used to identify the participant who donated the data. If the donor also filled in a survey, this can be used to link individual chatting behavior and survey responses.
+
+```{r}
+attributes(data_decrypted)
+```
+
+# Deploying ChatDashboard online
+
+To deploy ChatDashboard online, you need to adapt some settings in the `app.R` script, and then simply move the ChatDashboard folder to the serving directory of your R Studio Server instance. You can find more information on this [here](https://github.com/rstudio/shiny-server). Let's go through the settings you'd need to adapt:
+
+## Mandatory Changes
+
+1) For deploying online, we recommend to switch no forwarding in line `62`. Setting this value to `TRUE` will result in the URL parameter forwarded from the survey becoming a valid username for the platform and enables linking with survey data. Default structure is: www.example-website.com/ChatDashboard?id=TestParticipant | Extracts: TestParticipant
+
+2) In line `880` you can set the password participants must use to login to the website if use_forwarding is set to 
+`TRUE`. The default value is `password`.
+
+3) In  line `119` you must set `running_online` to `TRUE` and specify the library path of your R shiny server environment. This is important because the server environments typically have multiple library locations. You should select the library location that where all the dependency R packages are installed. You can find this location by running the following code in your R shiny server environment: `.libPaths()`
+
+## Optional Changes
+
+1) In lines `33` to `44`, you can set the language for the landing page, the app texts and the labels of the datatable. Currently, only German and English are supported for all of them.
+
+2) In line `57` you can define the consent message that will be used to exclude data. Keep in mind that *any* message from a person that did not post this **exact** message will be excluded from the chat. Test this rigorously and be sure to give your participants very precise instructions for this.
+
+3) In line `97` you can specify which columns should be automatically removed before the donation. The default behavior is to remove all columns containing raw PII. The corresponding anonimized versions are not removed automatically but can still be manually removed by participants.
+
+```{r, eval=F}
+Colnames_exclude_pii <- c("Sender",
+                          "Message",
+                          "Message_simplified",
+                          "Message_words",
+                          "Links",
+                          "Media",
+                          "Locations",
+                          "System_messages")
+```
+
+4) You can change any texts in the app by changing the corresponding text in the `ChatDashboard_DisplayText.csv` file in the `www` folder of the app. The texts support HTML formatting.
+
+Feel free to make any other changes you like to the processing, layout, display, and functionality of the app. Everything is provided under the `Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International Public License`

@@ -1,0 +1,16 @@
+<style>
+.bg-blue   { background-color: #cce5ff; }
+.bg-green  { background-color: #2e7d32; }
+.bg-yellow { background-color: #b8860b; }
+.bg-purple { background-color: #e2e3e5; }
+.bg-orange { background-color: #ffe5b4; }
+.bg-pink   { background-color: #f8d7da; }
+.bg-cyan   { background-color: #d1ecf1; }
+.codeblock pre {
+  margin: 0;
+  padding: 1em;
+  font-family: monospace;
+  white-space: pre-wrap;
+}
+</style>
+

@@ -1,0 +1,859 @@
+---
+title: "Data Donation Workshop - Notebook I: <br> Exporting and preprocessing WhatsApp Chat Logs"
+author: "Julian Kohne"
+date: today
+format:
+  html:
+    df-print: kable
+    css: styles.css
+    theme: flatly      
+    toc: true          
+    code-fold: false
+    embed-resources: true
+---
+
+# Setup
+
+Setting some knitr options for better display in the Notebook
+```{r}
+# options
+knitr::opts_chunk$set(fig.align = "center")
+```
+
+Setting working directory
+```{r}
+# Set the working directory to the directory of the current source file
+if (rstudioapi::isAvailable()) {
+  setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+} else {
+  message("Not running in RStudio; working directory not changed.")
+}
+
+```
+
+Installing and importing all necessary libraries
+```{r warning=FALSE, message=FALSE}
+# Define the list of packages you need
+pkg_list <- c("ggplot2", "rstudioapi","patchwork")  # add any packages you need
+
+# Identify packages in the list that are not yet installed
+new_packages <- pkg_list[!(pkg_list %in% installed.packages()[, "Package"])]
+
+# Install any new packages
+if (length(new_packages)) install.packages(new_packages)
+
+# Load all packages from the list
+invisible(lapply(pkg_list, library, character.only = TRUE))
+
+```
+
+```{r warning=FALSE, message=FALSE, eval = F, echo = F}
+# installing dev version of WhatsR
+devtools::install_github("gesiscss/WhatsR", force = TRUE)
+```
+
+```{r}
+library(WhatsR)
+```
+
+<br><br><br>
+
+# Exporting Data
+
+You can either export a chat log by yourself or use ones that are provided in the `data` folder. You can also generate a dummy chat log by yourself and use this one for the workshop.
+
+## Exporting your own Chat log
+
+::: {.panel-tabset}
+
+### Android
+
+![](../Images/DataExport_Guide_Android.png)
+
+### iOS
+
+![](../Images/WhatsApp_DataExport_iOS.png){width="75%"}
+:::
+
+The easiest option is to export your chat log file using the email option. This will send you either a plain .txt file or a zip file containing your chat log file. After downloading the file attachment from the email, you can unzip the file (if necessary) to get access to the .txt file with your chat log.
+
+## Using the provided Chat log(s)
+
+You can find several pre-generated chat logs in the `data` folder. You can use these files for the workshop.
+
+## Generating a dummy chat log
+
+```{r warning=FALSE, message=FALSE, eval=FALSE}
+
+# checking documentation
+??create_chatlog
+
+# generating a chat log file [prints to console and to a file]
+WhatsR::create_chatlog(
+  n_messages = 150,
+  n_chatters = 2,
+  n_emoji = 50,
+  n_diff_emoji = 20,
+  n_links = 20,
+  n_locations = 5,
+  n_smilies = 20,
+  n_diff_smilies = 15,
+  n_media = 10,
+  media_excluded = TRUE,
+  n_sdp = 3,
+  n_deleted = 5,
+  startdate = "01.01.2019",
+  enddate = "31.12.2022",
+  language = "german",
+  time_format = "24h",
+  os = "android",
+  path = getwd(),
+  chatname = "Simulated_WhatsR_chatlog"
+  )
+
+```
+
+<br><br><br>
+
+# Chat Log File Structure
+
+The chat log file is saved as a `.txt` file and can be opened with any text editor of your choice. Some good options are:
+
+1. Windows: [Notepad++](https://notepad-plus-plus.org/)
+
+2. MacOS: [TextMate](https://macromates.com/)
+
+3. Linux: [Notepadqq](https://notepadqq.com/s/)
+
+
+## General Structure
+
+In the most basic form, a chat log file consists of a list of messages with **3 part each**
+
+1. <span class="bg-blue">**Timestamp**</span>: Date and time when the message was sent
+
+2. <span class="bg-green">**Sender Name:**</span> The name or telephone number of the person who sent the message. If the person who exported the message has not
+saved the sender in their phone contacts, this will display the senders phone number in this format `+49 1234567890`. If the sender is saved in the
+telephone contacts, the corresponding name will be displayed.
+
+3. <span class="bg-yellow">**Message Body:**</span> The message that was send. Includes emoji, smileys, links, locations. For voice or video calls, an indicator is present in the text file. The same is true for sent media files or attached files.
+
+`Example Structure for: Android, German, 24h time format:`
+
+-----
+
+<div class="codeblock">
+  <pre>
+<span class="bg-blue">01.01.16, 03:14</span> - <span class="bg-green">Janae:</span><span class="bg-yellow"> Duis cum dolor congue posuere dignissim proin :D :D</span>
+<span class="bg-blue">01.01.16, 04:38</span> - <span class="bg-green">Kelsee:</span><span class="bg-yellow"> Commodo ullamcorper scelerisque ligula?  🧗🏽‍♂️ 👉</span>
+<span class="bg-blue">08.01.16, 10:49</span> - <span class="bg-green">Janae:</span><span class="bg-yellow"> &lt;Videonachricht weggelassen&gt;</span>
+<span class="bg-blue">15.01.16, 19:18</span> - <span class="bg-green">Kelsee:</span><span class="bg-yellow"> &lt;Medien ausgeschlossen&gt;</span>
+<span class="bg-blue">13.02.16, 10:48</span> - <span class="bg-green">Janae:</span><span class="bg-yellow"> Erat?!
+🏃🏽 🤸🏾‍♀</span>
+<span class="bg-blue">14.02.16, 09:49</span> - <span class="bg-green">Janae:</span></span><span class="bg-yellow"> Ultricies in pellentesque</span>
+  </pre>
+</div>
+
+-----
+
+Unfortunately, even though the chat log file looks very well structured at first, there are many factors influencing the exact layout of the file. This can make it difficult to process multiple files coming from different people using different phones and having different settings. The following factors all influence the layout of the chat log file:
+
+- Whether the file was exported with or without media files
+- Whether the file exported from an Android or iOS phone
+- The language setting of the phone the file was exported from
+- The time format setting of the phone the file was exported from
+
+Let's go through these one by one and check the differences!
+
+## With media and without media
+
+As mentioned before, the chat log file can be exported with or without media files. If the file is exported with media files, the chat log file will contain a line containing a media file indicator string and the name of the file. If the file is exported without media files, the chat log file will contain a line indicating that a media file was excluded.
+
+::: {.panel-tabset}
+
+### With media
+
+`Example Structure for: Android, German, 24h time format:`
+
+<div class="codeblock">
+  <pre>
+06.04.19, 09:14</span> - Frank: Schickst du das Foto von gestern mal? :D :D
+06.04.19, 09:38</span> - Bob: KLar! Moment...
+06.04.19, 11:18</span> - Bob:<span class="bg-yellow"> ‎IMG-20231223-WA0000.jpg (Datei angehängt)</span>
+06.04.19, 11:48</span> - Frank: Und das Video?
+06.04.19, 11:49</span> - Bob: Kommt sofort!
+06.04.19, 11:49</span> - Frank:</span><span class="bg-yellow"> ‎VID-20231227-WA0002.mp4 (Datei angehängt)</span>
+  </pre>
+</div>
+
+### Without media
+
+`Example Structure for: Android, German, 24h time format:`
+
+<div class="codeblock">
+  <pre>
+06.04.19, 09:14</span> - Frank: Schickst du das Foto von gestern mal? :D :D
+06.04.19, 09:38</span> - Bob: KLar! Moment...
+06.04.19, 11:18</span> - Bob:<span class="bg-yellow"> &lt;Medien ausgeschlossen&gt;</span>
+06.04.19, 11:48</span> - Frank: Und das Video?
+06.04.19, 11:49</span> - Bob: Kommt sofort!
+06.04.19, 11:49</span> - Frank:</span><span class="bg-yellow"> &lt;Medien ausgeschlossen&gt;</span>
+  </pre>
+</div>
+
+
+:::
+
+## User vs. System generated messages
+
+WhatsApp adds some information into chat logs as system messages. These are problematic for parsing because they do have a timestamp but not sender. 
+
+`Example Structure for: Android, German, 24h time format:`
+
+<div class="codeblock">
+  <pre>
+</span><span class="bg-yellow">27.01.19, 18:51 - Nachrichten und Anrufe sind Ende-zu-Ende-verschlüsselt. Niemand außerhalb dieses Chats kann sie lesen oder anhören, nicht einmal WhatsApp. Tippe, um mehr zu erfahren.</span>
+06.04.19, 09:14</span> - Frank: Schickst du das Foto von gestern mal? :D :D
+06.04.19, 09:38</span> - Bob: KLar! Moment...
+06.04.19, 11:18</span> - Bob: &lt;Medien ausgeschlossen&gt;
+06.04.19, 11:48</span> - Frank: Und das Video?
+06.04.19, 11:49</span> - Bob: Kommt sofort!
+06.04.19, 11:49</span> - Frank: &lt;Medien ausgeschlossen&gt;
+</span><span class="bg-yellow">06.04.19, 11:49 - Frank hat eine neue Telefonnummer. Tippe, um eine Nachricht zu schreiben oder die neue Nummer hinzuzufügen.</span>
+  </pre>
+</div>
+
+
+## Language
+
+The exact strings of media file indiators and system messages differ, depending on the language settings of the exporting phones. This makes
+it more difficult to parse data from chat logs exported from phones with different language settings.
+
+::: {.callout-tip}
+The language setting of the exporting phone only affects the messages inserted by WhatsApp into the chat.
+The actual message content is **always** in the language that the people also write in. This can result in a chat where the
+system messages and media indicators are in a different language than the actual chat messages.
+:::
+
+
+::: {.panel-tabset}
+
+### German
+
+`Example Structure for: Android, German, 24h time format:`
+
+<div class="codeblock">
+  <pre>
+</span><span class="bg-yellow">27.01.19, 18:51 - Nachrichten und Anrufe sind Ende-zu-Ende-verschlüsselt. Niemand außerhalb dieses Chats kann sie lesen oder anhören, nicht einmal WhatsApp. Tippe, um mehr zu erfahren.</span>
+06.04.19, 09:14</span> - Frank: Schickst du das Foto von gestern mal? :D :D
+06.04.19, 09:38</span> - Bob: KLar! Moment...
+06.04.19, 11:18</span> - Bob: &lt;Medien ausgeschlossen&gt;
+06.04.19, 11:48</span> - Frank: Und das Video?
+06.04.19, 11:49</span> - Bob: Kommt sofort!
+06.04.19, 11:49</span> - Frank: &lt;Medien ausgeschlossen&gt;
+</span><span class="bg-yellow">06.04.19, 11:49 - Frank hat eine neue Telefonnummer. Tippe, um eine Nachricht zu schreiben oder die neue Nummer hinzuzufügen.</span>
+  </pre>
+</div>
+
+### English
+
+`Example Structure for: Android, English, 24h time format:`
+
+<div class="codeblock">
+  <pre>
+</span><span class="bg-yellow">27.01.19, 18:51 - Messages and calls are end-to-end encrypted. No one outside of this chat, not even WhatsApp, can read or listen to them.</span>
+06.04.19, 09:14</span> - Frank: Schickst du das Foto von gestern mal? :D :D
+06.04.19, 09:38</span> - Bob: KLar! Moment...
+06.04.19, 11:18</span> - Bob: &lt;media omitted&gt;
+06.04.19, 11:48</span> - Frank: Und das Video?
+06.04.19, 11:49</span> - Bob: Kommt sofort!
+06.04.19, 11:49</span> - Frank: &lt;media omitted&gt;
+</span><span class="bg-yellow">06.04.19, 11:49 - Frank changed their phone number to a new number. Tap to message or add the new number.</span>
+  </pre>
+</div>
+
+:::
+
+### Media file indicators
+
+::: {.panel-tabset}
+
+### German
+
+`Example Structure for: Android, German, 24h time format:`
+
+<div class="codeblock">
+  <pre>
+</span>27.01.19, 18:51 - Nachrichten und Anrufe sind Ende-zu-Ende-verschlüsselt. Niemand außerhalb dieses Chats kann sie lesen oder anhören, nicht einmal WhatsApp. Tippe, um mehr zu erfahren.
+06.04.19, 09:14</span> - Frank: Schickst du das Foto von gestern mal? :D :D
+06.04.19, 09:38</span> - Bob: KLar! Moment...
+06.04.19, 11:18</span> - Bob: <span class="bg-yellow">&lt;Medien ausgeschlossen&gt;</span>
+06.04.19, 11:48</span> - Frank: Und das Video?
+06.04.19, 11:49</span> - Bob: Kommt sofort!
+06.04.19, 11:49</span> - Frank: <span class="bg-yellow">&lt;Medien ausgeschlossen&gt;</span>
+06.04.19, 11:49 - Frank hat eine neue Telefonnummer. Tippe, um eine Nachricht zu schreiben oder die neue Nummer hinzuzufügen.
+  </pre>
+</div>
+
+### English
+
+`Example Structure for: Android, English, 24h time format:`
+
+<div class="codeblock">
+  <pre>
+</span>27.01.19, 18:51 - Messages and calls are end-to-end encrypted. No one outside of this chat, not even WhatsApp, can read or listen to them.
+06.04.19, 09:14</span> - Frank: Schickst du das Foto von gestern mal? :D :D
+06.04.19, 09:38</span> - Bob: KLar! Moment...
+06.04.19, 11:18</span> - Bob: <span class="bg-yellow">&lt;media omitted&gt;</span>
+06.04.19, 11:48</span> - Frank: Und das Video?
+06.04.19, 11:49</span> - Bob: Kommt sofort!
+06.04.19, 11:49</span> - Frank: <span class="bg-yellow">&lt;media omitted&gt;</span>
+06.04.19, 11:49 - Frank changed their phone number to a new number. Tap to message or add the new number.
+  </pre>
+</div>
+
+:::
+
+## AM/PM vs. 24h format
+
+The timestamps in the exported chat logs depend on the date and time settings of the exporting phone. The most common formats are the 24h format and the AM/PM format. The 24h format is more common in Europe, while the AM/PM format is more common in the US.
+
+::: {.panel-tabset}
+
+### 24h format
+
+`Example Structure for: Android, German, 24h time format:`
+
+<div class="codeblock">
+  <pre>
+<span class="bg-yellow">27.01.19, 18:51</span> - Nachrichten und Anrufe sind Ende-zu-Ende-verschlüsselt. Niemand außerhalb dieses Chats kann sie lesen oder anhören, nicht einmal WhatsApp. Tippe, um mehr zu erfahren.
+<span class="bg-yellow">06.04.19, 09:14</span> - Frank: Schickst du das Foto von gestern mal? :D :D
+<span class="bg-yellow">06.04.19, 09:38</span> - Bob: KLar! Moment...
+<span class="bg-yellow">06.04.19, 11:18</span> - Bob: &lt;Medien ausgeschlossen&gt;
+<span class="bg-yellow">06.04.19, 11:48</span> - Frank: Und das Video?
+<span class="bg-yellow">06.04.19, 11:49</span> - Bob: Kommt sofort!
+<span class="bg-yellow">06.04.19, 11:49</span> - Frank: &lt;Medien ausgeschlossen&gt;
+<span class="bg-yellow">06.04.19, 11:49</span> - Frank hat eine neue Telefonnummer. Tippe, um eine Nachricht zu schreiben oder die neue Nummer hinzuzufügen.
+  </pre>
+</div>
+
+### AM/PM format
+
+`Example Structure for: Android, German, am/pm time format:`
+
+<div class="codeblock">
+  <pre>
+<span class="bg-yellow">27.01.19, 06:51 PM</span> - Nachrichten und Anrufe sind Ende-zu-Ende-verschlüsselt. Niemand außerhalb dieses Chats kann sie lesen oder anhören, nicht einmal WhatsApp. Tippe, um mehr zu erfahren.
+<span class="bg-yellow">06.04.19, 09:14 PM</span> - Frank: Schickst du das Foto von gestern mal? :D :D
+<span class="bg-yellow">06.04.19, 09:38 PM</span> - Bob: KLar! Moment...
+<span class="bg-yellow">06.04.19, 11:18 PM</span> - Bob: &lt;media omitted&gt;
+<span class="bg-yellow">06.04.19, 11:48 PM</span> - Frank: Und das Video?
+<span class="bg-yellow">06.04.19, 11:49 PM</span> - Bob: Kommt sofort!
+<span class="bg-yellow">06.04.19, 11:49 PM</span> - Frank: &lt;media omitted&gt;
+<span class="bg-yellow">06.04.19, 11:49 PM</span> - Frank hat eine neue Telefonnummer. Tippe, um eine Nachricht zu schreiben oder die neue Nummer hinzuzufügen.
+  </pre>
+</div>
+
+:::
+
+
+
+## Android vs. iOS
+
+Unfortunately, chats exported from Android and iOS phones have different structures with respect to multiple features. The following are some of the differences:
+
+### Timestamps
+
+For both phones, the timestamp depends mainly on the setting of the exporting phone. The most frequent formats chosen are the 24h format and the AM/PM format. The 24h format is more common in Europe, while the AM/PM format is more common in the US. However, even for the same timestamps, iOS and Android can have different formattings. For example, the following timestamps are the same but formatted differently:
+
+::: {.panel-tabset}
+
+### Android
+
+`Example Structure for: Android, English, 24h time format:`
+
+<div class="codeblock">
+  <pre>
+<span class="bg-yellow">06.04.19, 09:14</span> - Frank: Hi Bob, how are you doing?
+<span class="bg-yellow">06.04.19, 09:38</span> - Bob: Fine, how about you?
+<span class="bg-yellow">06.04.19, 11:18</span> - Bob: Did you see the game yesterday?
+<span class="bg-yellow">06.04.19, 11:48</span> - Frank: Yes!! What a great overtime finish!
+<span class="bg-yellow">06.04.19, 11:49</span> - Bob: For real! I was so nervous!
+<span class="bg-yellow">06.04.19, 10:49</span> - Frank: Wanna go to the stadium next time?
+  </pre>
+</div>
+
+### iOS
+
+`Example Structure for: iOS, English, 24h time format:`
+
+<div class="codeblock">
+  <pre>
+<span class="bg-yellow">06.04.19, 09:14:23</span> - Frank: Hi Bob, how are you doing?
+<span class="bg-yellow">06.04.19, 09:38:16</span> - Bob: Fine, how about you?
+<span class="bg-yellow">06.04.19, 11:18:01</span> - Bob: Did you see the game yesterday?
+<span class="bg-yellow">06.04.19, 11:48:56</span> - Frank: Yes!! What a great overtime finish!
+<span class="bg-yellow">06.04.19, 11:49:33</span> - Bob: For real! I was so nervous!
+<span class="bg-yellow">06.04.19, 10:49:12</span> - Frank: Wanna go to the stadium next time?
+  </pre>
+</div>
+
+:::
+
+As you can see, Chats exported from iPhones in 24h format have seconds in the timestamp, while chats exported from Android phones do not. This is a small difference but can cause problems when parsing the data and also represents a different level of time resolution.
+
+
+### Media file indicators
+
+For Android and iOs, the indicator strings for media files are different. This is true **both** for exports with media files and without media files.
+
+#### With media files
+
+::: {.panel-tabset}
+
+### Android
+
+`Example Structure for: Android, German, 24h time format:`
+
+<div class="codeblock">
+  <pre>
+06.04.19, 09:14 - Frank: Schickst du das Foto von gestern mal? :D :D
+06.04.19, 09:38 - Bob: KLar! Moment...
+06.04.19, 11:18 - Bob:<span class="bg-yellow"> ‎IMG-20231223-WA0000.jpg (Datei angehängt)</span>
+06.04.19, 11:48 - Frank: Und das Video?
+06.04.19, 11:49 - Bob: Kommt sofort!
+06.04.19, 10:49 - Frank:<span class="bg-yellow"> ‎VID-20231227-WA0002.mp4 (Datei angehängt)</span>
+  </pre>
+</div>
+
+### iOS
+
+`Example Structure for: iOS, German, 24h time format:`
+
+<div class="codeblock">
+  <pre>
+06.04.19, 09:14:23 - Frank: Schickst du das Foto von gestern mal? :D :D
+06.04.19, 09:38:16 - Bob: KLar! Moment...
+06.04.19, 11:18:01 - Bob:<span class="bg-yellow">&lt;Anhang: ‎IMG-20231223-WA0000.jpg&gt;</span>
+06.04.19, 11:48:56 - Frank: Und das Video?
+06.04.19, 11:49:33 - Bob: Kommt sofort!
+06.04.19, 10:49:12 - Frank:<span class="bg-yellow">&lt;Anhang: ‎VID-20231227-WA0002.mp4&gt;</span>
+  </pre>
+</div>
+
+:::
+
+#### Without media files
+
+::: {.panel-tabset}
+
+### Android
+
+`Example Structure for: Android, German, 24h time format:`
+
+<div class="codeblock">
+  <pre>
+06.04.19, 09:14 - Frank: Schickst du das Foto von gestern mal? :D :D
+06.04.19, 09:38 - Bob: KLar! Moment...
+06.04.19, 11:18 - Bob:<span class="bg-yellow"> &lt;Medien ausgeschlossen&gt;</span>
+06.04.19, 11:48 - Frank: Und das Video?
+06.04.19, 11:49 - Bob: Kommt sofort!
+06.04.19, 10:49 - Frank:</span><span class="bg-yellow"> &lt;Medien ausgeschlossen&gt;</span>
+  </pre>
+</div>
+
+### iOS
+
+`Example Structure for: iOS, German, 24h time format:`
+
+<div class="codeblock">
+  <pre>
+06.04.19, 09:14:23 - Frank: Schickst du das Foto von gestern mal? :D :D
+06.04.19, 09:38:16 - Bob: KLar! Moment...
+06.04.19, 11:18:01 - Bob:<span class="bg-yellow">Bild weggelassen</span>
+06.04.19, 11:48:56 - Frank: Und das Video?
+06.04.19, 11:49:33 - Bob: Kommt sofort!
+06.04.19, 10:49:12 - Frank:</span><span class="bg-yellow">Video weggelassen</span>
+  </pre>
+</div>
+
+:::
+
+<br><br><br>
+
+# Parsing Chat log file(s)
+
+To effectively parse a WhatsApp chat log, we need to know the operating system of the device that exported the chat log, the language setting of the exporting phone, the date-time format of the operating phone and whether the file was exported including media files or not. Because WhatsApp data donations do not provide us with this meta-information, we need to infer it from the structure of the chat logs automatically, and then use the settings to parse the data.
+
+```{mermaid, echo = FALSE}
+ flowchart TD
+    A1[Read Chat File] --> A2[Detect phone OS based on media indicators and time format]
+    A2 -- iOS --> A3[Detect phone language setting based on media indicators and system messages]
+    A2 -- Android --> A3[Detect phone language setting based on media indicators and system messages]
+    A3 -- German--> A4[Replace special characters and delete left-to-right-markers and non-zero-width-breaking-spaces]
+    A3 -- English--> A4[Replace special characters and delete left-to-right-markers and non-zero-width-breaking-spaces]
+    A4 --> A5[Parse each message into a DateTime, Sender, and Message column]
+    A5 --> B1[Timestamp]
+    A5 --> B2[Sender]
+    A5 --> B3[Message]
+    B3 --> B4[Distinguish user-generated messages from system messages]
+    B4 --> C1[System Messages]
+    B4 --> D1[Message Text]
+    D1 --> A7[Detecting self-deleting photos]
+    A7 --> A8[Extracting message features from message column]
+    A8 --> A9[Emoji]
+    A9 --> A20[EmojiDescriptions]
+    A8 --> A10[Smilies]
+    A8 --> A11[URLs]
+    A8 --> A12[Media Files]
+    B1 --> A13[Time Order]
+    B1 --> A14[Display Order]
+    A8 --> A16[Locations]
+    A8 --> A17[Flat message]
+    A19 --> A18[Token Count]
+    A17 --> A19[Tokenized Version]
+
+    %% Define a class for the colored nodes
+    classDef colored fill:#a3d9ff, stroke:#333, stroke-width:2px;
+
+    %% Apply the class to nodes B1, B2, B3, C1, and A9-A19
+    class D1,A20,B1,B2,B3,C1,A9,A10,A11,A12,A13,A14,A15,A16,A17,A18,A19 colored;
+
+```
+
+To do this by hand, we would need to:
+
+- build our own list of Regexes to detect WhatsApp System Messages
+- RegExes detect all varieties of timestamps
+- RegExes to detect media files
+- Do all of this for multiple operating systems, languages, time settings and for exports including and not including media files
+
+Luckily, the `WhatsR` package includes all of this already and does it as automatically as possible! Lets use it to parse a chat log file!
+
+```{r warning=FALSE, message=FALSE, eval=FALSE}
+# opening documentation
+??parse_chat()
+```
+
+
+```{r warning=FALSE, message=FALSE}
+# Running example:
+data <- parse_chat(
+  path = system.file("englishandroid24h.txt", package = "WhatsR"),
+  anonymize = FALSE
+  )
+```
+
+```{r warning=FALSE, message=FALSE}
+colnames(data)
+```
+
+```{r warning=FALSE, message=FALSE}
+dim(data)
+```
+
+```{r warning=FALSE, message=FALSE}
+head(data)
+```
+
+:::{callout-tip}
+If you're using the GitHub dev version of `WhatsR`, the parsed dataframe also contains the inferred phone language, detected operating system, and time the exported chat log was parsed. The CRAN version of the package does not contain this feature yet.
+:::
+
+```{r warning=FALSE, message=FALSE}
+attributes(data)$language
+attributes(data)$detectedOS
+as.POSIXct(attributes(data)$parsedAt)
+```
+
+
+<br><br><br>
+
+# Explore your own data
+
+You can now use the `parse_chat` function to parse the example chat files or your own chat files.
+
+ - Is everything parsed correctly?
+ - Does your data contain all variables?
+ - Is there anything that is going wrong?
+ - Is there anything you are missing?
+
+## Parsing Data
+
+```{r warning=FALSE, message=FALSE, eval = F}
+# TODO: replace the path variable with the path to your txt file
+data <- parse_chat("PATH_TO_YOUR_FILE", anonymize = FALSE)
+```
+
+## Summarizing parsed Data
+
+```{r warning=FALSE, message=FALSE}
+dim(data)
+attributes(data)$language
+attributes(data)$detectedOS
+as.POSIXct(attributes(data)$parsedAt)
+```
+
+
+```{r warning=FALSE, message=FALSE}
+??summarize_chat
+summarize_chat(data, exclude_sm = TRUE)
+
+```
+
+
+```{r warning=FALSE, message=FALSE}
+??summarize_tokens_per_person
+summarize_tokens_per_person(data, exclude_sm = TRUE)
+```
+# Visualizing your own Data
+
+The WhatsR package has a variety of functions to visualize your data. You can check some examples here and check out your own dataset!
+
+```{r}
+# Overview of all available functions
+??WhatsR
+```
+
+## Visualizing Messaging
+
+```{r warning=FALSE, message=FALSE}
+# checking documentation
+??plot_messages
+
+# Plotting amount of messages
+p1 <- plot_messages(data, plot = "bar", exclude_sm = TRUE)
+p2 <- plot_messages(data, plot = "cumsum", exclude_sm = TRUE)
+p3 <- plot_messages(data, plot = "heatmap", exclude_sm = TRUE)
+p4 <- plot_messages(data, plot = "pie", exclude_sm = TRUE)
+
+```
+
+
+```{r warning=FALSE, message=FALSE}
+# checking documentation
+??plot_tokens
+
+# Plotting amount of messages
+p5 <- plot_tokens(data, plot = "bar", exclude_sm = TRUE);p5
+p6 <- plot_tokens(data, plot = "box", exclude_sm = TRUE);p6
+p7 <- plot_tokens(data, plot = "violin", exclude_sm = TRUE);p7
+p8 <- plot_tokens(data, plot = "cumsum", exclude_sm = TRUE);p8
+
+```
+
+
+```{r warning=FALSE, message=FALSE}
+# socumentation
+??plot_tokens_over_time
+
+# Plotting amount of tokens over time
+p9 <- plot_tokens_over_time(data,
+                            plot = "year",
+                            exclude_sm = TRUE)
+
+p10 <- plot_tokens_over_time(data,
+                             plot = "day",
+                             exclude_sm = TRUE)
+
+p11 <- plot_tokens_over_time(data,
+                             plot = "hour",
+                             exclude_sm = TRUE)
+
+p12 <- plot_tokens_over_time(data,
+                             plot = "heatmap",
+                             exclude_sm = TRUE)
+
+p13 <- plot_tokens_over_time(data,
+                             plot = "alltime",
+                             exclude_sm = TRUE)
+
+```
+
+## Plotting sent Links
+
+```{r warning=FALSE, message=FALSE}
+# documentation
+??plot_links
+
+# Plotting amount of links
+p14 <- plot_links(data, plot = "bar", exclude_sm = TRUE)
+p15 <- plot_links(data, plot = "splitbar", exclude_sm = TRUE)
+p16 <- plot_links(data, plot = "heatmap", exclude_sm = TRUE)
+p17 <- plot_links(data, plot = "cumsum", exclude_sm = TRUE)
+
+```
+## Plotting sent Smilies
+
+```{r warning=FALSE, message=FALSE}
+# documentation
+??plot_smilies
+
+# Plotting amount of smilies
+p18 <- plot_smilies(data, plot = "bar", exclude_sm = TRUE)
+p19 <- plot_smilies(data, plot = "splitbar", exclude_sm = TRUE)
+p20 <- plot_smilies(data, plot = "heatmap", exclude_sm = TRUE);p20
+p21 <- plot_smilies(data, plot = "cumsum", exclude_sm = TRUE)
+
+```
+
+## Plotting Sent Emoji
+
+```{r warning=FALSE, message=FALSE}
+# checking documentation
+??plot_emoji
+
+# Plotting amount of messages
+p22 <- plot_emoji(data,
+ plot = "bar",
+ min_occur = 1,
+ exclude_sm = TRUE,
+ emoji_size = 5)
+
+p23 <- plot_emoji(data,
+ plot = "splitbar",
+ min_occur = 1,
+ exclude_sm = TRUE,
+ emoji_size = 5);p23
+
+p24 <- plot_emoji(data,
+ plot = "heatmap",
+ min_occur = 1,
+ exclude_sm = TRUE);p24
+
+p25 <- plot_emoji(data,
+ plot = "cumsum",
+ min_occur = 1,
+ exclude_sm = TRUE)
+
+```
+
+## Checking Reaction Times
+
+```{r warning=FALSE, message=FALSE}
+# check documentation
+??plot_replytimes
+
+# Plotting distribution of reaction times
+p26 <- plot_replytimes(data,
+                       type = "replytime",
+                       exclude_sm = TRUE)
+
+p27 <- plot_replytimes(data,
+                       type = "reactiontime",
+                       exclude_sm = TRUE)
+
+```
+## Checking Lexical Dispersion
+
+```{r fig.show='hide', warning=FALSE, message=FALSE, results='hide'}
+# checking documentation
+??plot_lexical_dispersion
+
+# Plotting lexical dispersion 
+# TODO: change the TESTWORD to a word conatined in your chat
+plot <- plot_lexical_dispersion(data,
+                                  keywords = c("problem"),
+                                  exclude_sm = TRUE)
+
+```
+
+```{r}
+# printing the plot
+plot
+```
+
+## Plotting Network of Replies
+
+```{r warning=FALSE, message=FALSE}
+# checking documentation
+??plot_network
+
+# Plotting response network
+plot_network(data,
+             edgetype = "n",
+             collapse_sessions = TRUE,
+             exclude_sm = TRUE)
+
+```
+
+## Plotting Wordclouds
+
+```{r warning=FALSE, message=FALSE}
+# checking documentation
+??plot_wordcloud
+
+# plotting wordcloud
+wordcloud <- plot_wordcloud(data, exclude_sm = TRUE)
+
+split_wordcloud <- plot_wordcloud(data,
+                                  exclude_sm = TRUE,
+                                  comparison = TRUE,
+                                  min_occur = 3)
+
+```
+
+
+```{r warning=FALSE, message=FALSE}
+
+```
+
+
+```{r warning=FALSE, message=FALSE}
+
+```
+
+
+```{r warning=FALSE, message=FALSE}
+
+```
+
+
+```{r warning=FALSE, message=FALSE}
+
+```
+
+
+```{r warning=FALSE, message=FALSE}
+
+```
+
+
+```{r warning=FALSE, message=FALSE}
+
+```
+
+
+```{r warning=FALSE, message=FALSE}
+
+```
+
+
+```{r warning=FALSE, message=FALSE}
+
+```
+
+
+```{r warning=FALSE, message=FALSE}
+
+```
+
+
+```{r warning=FALSE, message=FALSE}
+
+```
+
+
+```{r warning=FALSE, message=FALSE}
+
+```
+
+
+```{r warning=FALSE, message=FALSE}
+
+```
+
+
+```{r warning=FALSE, message=FALSE}
+
+```

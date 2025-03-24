@@ -1,0 +1,267 @@
+---
+title: "Data Donation Workshop - Notebook II: <br> Anonymization and Consent Checking for WhatsApp Chat Logs"
+author: "Julian Kohne"
+date: today
+format:
+  html:
+    df-print: kable
+    css: styles.css
+    theme: flatly      
+    toc: true          
+    code-fold: false
+    embed-resources: true
+---
+
+# Setup
+
+Setting some knitr options for better display in the Notebook
+```{r}
+# options
+knitr::opts_chunk$set(fig.align = "center")
+```
+
+Setting working directory
+```{r}
+# Set the working directory to the directory of the current source file
+if (rstudioapi::isAvailable()) {
+  setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+} else {
+  message("Not running in RStudio; working directory not changed.")
+}
+
+```
+
+Installing and importing all necessary libraries
+```{r warning=FALSE, message=FALSE}
+# Define the list of packages you need
+pkg_list <- c("ggplot2", "rstudioapi","patchwork")  # add any packages you need
+
+# Identify packages in the list that are not yet installed
+new_packages <- pkg_list[!(pkg_list %in% installed.packages()[, "Package"])]
+
+# Install any new packages
+if (length(new_packages)) install.packages(new_packages)
+
+# Load all packages from the list
+invisible(lapply(pkg_list, library, character.only = TRUE))
+
+```
+
+```{r warning=FALSE, message=FALSE, eval = F, echo = F}
+# installing dev version of WhatsR
+devtools::install_github("gesiscss/WhatsR", force = TRUE)
+```
+
+```{r}
+library(WhatsR)
+```
+
+# Anonimization
+
+Lets explore how the anonymization of data works in `WhatsR`. The parse_chat function has a parameter called `anonymize` that can be set to `TRUE`, `FALSE`, or `"add"`.
+`TRUE` and `FALSE` will result in an anonymized and a non-anonymized data frame respectively. `"add"` will return a data frame containing both the anonymized and non-anonymized columns.
+
+## Importing data
+
+```{r warning=FALSE, message=FALSE}
+# Running example:
+data_raw <- parse_chat(
+  path = system.file("englishandroid24h.txt", package = "WhatsR"),
+  anonymize = FALSE
+  )
+
+# Running example:
+data_anon <- parse_chat(
+  path = system.file("englishandroid24h.txt", package = "WhatsR"),
+  anonymize = TRUE
+  )
+
+# Running example:
+data_both <- parse_chat(
+  path = system.file("englishandroid24h.txt", package = "WhatsR"),
+  anonymize = "add"
+  )
+```
+
+## Checking Differences
+
+### Dimensions of resulting data frames
+
+We can see that the resulting data frames all have the same number of rows, but different numbers of columns.
+
+```{r warning=FALSE, message=FALSE}
+dim(data_raw)
+dim(data_anon)
+dim(data_both)
+```
+
+### Included columns
+
+```{r warning=FALSE, message=FALSE}
+# Create a vector with all unique column names across the three datasets
+all_cols <- sort(unique(c(colnames(data_raw), colnames(data_anon), colnames(data_both))))
+
+# Helper function to convert logical values to "Yes" or "No"
+yn <- function(x) ifelse(x, "Yes", "No")
+
+# Build the summary table
+summary_table <- data.frame(
+  Column = all_cols,
+  data_raw = yn(all_cols %in% colnames(data_raw)),
+  data_anon = yn(all_cols %in% colnames(data_anon)),
+  data_both = yn(all_cols %in% colnames(data_both)),
+  stringsAsFactors = FALSE
+)
+
+# Display the table in your Quarto document
+knitr::kable(summary_table, caption = "Column Inclusion in Each Dataset")
+
+```
+
+
+## Differences between anonymized and non-anonymized columns
+
+### Senders
+
+Sender names (except for WhatsApp System Messages) are replaced with a unique identifier in the anonymized data frame.
+This enables to still tell different senders apart from one another in the dataset but removes any PII from the column.
+
+```{r warning=FALSE, message=FALSE}
+cbind.data.frame(raw = unique(data_both$Sender),anon = unique(data_both$Sender_anon))
+
+```
+
+### URLs
+
+For URLs, the anonymization process reduces the URL to its top level domain name. This way, the types of websites that people
+send to each other can still be analyzed, but the risk of revealing a persons identity is drastically reduced.
+
+```{r warning=FALSE, message=FALSE}
+cbind.data.frame(raw = unique(unlist(data_both$URL[!is.na(data_both$URL)])),
+anon = unique(unlist(data_both$URL_anon[!is.na(data_both$URL_anon)])))
+
+```
+
+### Media
+
+For contained media files, the anonymization process completely removes the file name and only keeps the file extension. This way, the type of media people send to each other can still be analyzed, but the risk of revealing a persons identity is drastically reduced.
+
+```{r warning=FALSE, message=FALSE}
+cbind.data.frame(raw = unique(unlist(data_both$Media[!is.na(data_both$Media)])),
+anon = unique(unlist(data_both$Media_anon[!is.na(data_both$Media_anon)])))
+```
+
+### Locations
+
+For shared locations, the anonymization process removes the Google maps URL containing the exact coordinates and only keeps an indicator for location sharing. This way, sharing locations with each other can still be analyzed, but the risk of revealing a persons identity is drastically reduced.
+
+```{r warning=FALSE, message=FALSE}
+cbind.data.frame(raw = unique(unlist(data_both$Location[!is.na(data_both$Location)])),
+anon = unique(unlist(data_both$Location_anon[!is.na(data_both$Location_anon)])))
+
+```
+# Consent checking
+
+The `parse_chat` function has a parameter called `consent` that can be set to a string containing the consent message that each chat participant has to post in the chat to before the data is parsed. If the user does not post the consent message, all their messages will be removed.
+
+```{r warning=FALSE, message=FALSE}
+consent_message <- "I hereby consent to donate anonimized metainformation of this conversation for research purposes. No personal identifiable information about myself will be saved. I am aware that my data will be used for research about data donation behaviors and will be made available in anonomized form to other researchers and used in aggregated form in research publications."
+
+```
+
+Lets check if the message is contained in the chat log
+
+```{r warning=FALSE, message=FALSE}
+table(consent_message == data_raw$Message, useNA = "always")
+```
+
+Lets check who posted the consent message
+
+```{r warning=FALSE, message=FALSE}
+data_raw[data_raw$Message == consent_message,]$Sender[!is.na(data_raw[data_raw$Message == consent_message,]$Sender)]
+```
+
+Lets parse the chat again, but this time enable the consent checking
+
+```{r warning=FALSE, message=FALSE}
+# Running example:
+data_raw_consent <- parse_chat(
+  path = system.file("englishandroid24h.txt", package = "WhatsR"),
+  anonymize = FALSE,
+  consent = consent_message
+  )
+
+# Running example:
+data_anon_consent <- parse_chat(
+  path = system.file("englishandroid24h.txt", package = "WhatsR"),
+  anonymize = TRUE,
+  consent = consent_message
+  )
+
+# Running example:
+data_both_consent <- parse_chat(
+  path = system.file("englishandroid24h.txt", package = "WhatsR"),
+  anonymize = "add",
+  consent = consent_message
+  )
+```
+
+## Checking Differences
+
+Lets check the differences between the datasets
+
+### Included rows
+
+Using the consent parameter, the `parse_chat` function removed all messages from the user that did not post the consent message. This results in excluded rows but the number and type of included columns stays the same.
+
+
+```{r warning=FALSE, message=FALSE}
+# Create a list with your datasets
+datasets <- list(
+  "data_raw" = data_raw,
+  "data_anon" = data_anon,
+  "data_both" = data_both,
+  "data_raw_consent" = data_raw_consent,
+  "data_anon_consent" = data_anon_consent,
+  "data_both_consent" = data_both_consent
+)
+
+# Build the summary table with dataset name, number of rows, and number of columns
+summary_table <- data.frame(
+  Dataset = names(datasets),
+  Rows = sapply(datasets, function(x) dim(x)[1]),
+  Columns = sapply(datasets, function(x) dim(x)[2]),
+  Dimension = sapply(datasets, function(x) paste(dim(x), collapse = " x ")),
+  stringsAsFactors = FALSE
+)
+
+# Display the table nicely in your Quarto document
+knitr::kable(summary_table, caption = "Comparison of Dataset Dimensions")
+
+
+```
+
+### Removed Participants
+
+The consent function removed all messages from Dave and Mallory because they did not post the consent message.
+
+```{r}
+# Get unique senders from both datasets
+senders_raw <- unique(data_raw$Sender)
+senders_raw_consent <- unique(data_raw_consent$Sender)
+
+# Combine the senders from both datasets into one sorted vector
+all_senders <- sort(unique(c(senders_raw, senders_raw_consent)))
+
+# Create a summary table indicating presence in each dataset
+summary_table <- data.frame(
+  Sender = all_senders,
+  data_raw = ifelse(all_senders %in% senders_raw, "Yes", "No"),
+  data_raw_consent = ifelse(all_senders %in% senders_raw_consent, "Yes", "No"),
+  stringsAsFactors = FALSE
+)
+
+# Display the table in your Quarto document using knitr
+knitr::kable(summary_table, caption = "Unique Sender Presence in data_raw vs. data_raw_consent")
+
+```

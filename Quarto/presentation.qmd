@@ -1,0 +1,619 @@
+---
+title: "Collecting and Processing WhatsApp Data Donations"
+format: 
+  revealjs:
+    self-contained: true
+    css: "styles.css"
+    slide-number: true
+    logo: "../Images/GESIS_Blau_mit-SR_CMYK_RZ_ZW.jpg"
+    theme: default
+    interactive-elements: true
+author:
+  - name: Julian Kohne
+date: today
+version: 0.1
+bibliography: references.bib
+csl: apa.csl
+footer: "© 2025 GESIS - Leibniz Institute for the Social Sciences"
+---
+
+## Overview{.smaller}
+
+**Goal:**
+<br>
+Semi-ineractive Walk-through of the process for **preprocessing**, **collecting**, and **analyzing** donated WhatsApp Chat Log data.
+<br>
+<br>
+
+| Time             | Block                                                                    |
+|------------------|--------------------------------------------------------------------------|
+| 09:00 - 09:15    | Presentation: Overview of WhatsApp Chat Log Data                         |
+| 09:15 - 09:45    | **Code along:** Exporting & Parsing WhatsApp Chat Log Data               |
+| 09:45 - 09:55    | Presentation: Anonymization & Consent Checking                           |
+| 09:55 - 10:10    | **Code along:** Anonymization & Consent Checking                         |
+| 10:10 - 10:20    | Presentation: ChatDashboard for Data Donation Studies                    |
+| 10:20 - 10:45    | **Code along:** Installing and adapting ChatDashboard                    |
+| 10:45 - 11:00    | Discussion, Q&A                                                          |
+
+## Code-along{.smaller}
+<br>
+What you need to code-along:
+
+  - Laptop with Rstudio installed
+  - Install WhatsR package and all dependencies
+    - for dev version:<br>
+    `devtools::install_github("gesiscss/WhatsR")`
+  - Download data and notebook from GitHub: [insert link here]
+  - OPTIONAL: [Export your own WhatsApp data](https://faq.whatsapp.com/1180414079177245/?cms_platform=android&helpref=platform_switcher&locale=et_EE)
+
+
+# Overview:<br> WhatsApp Chat Log Data
+
+## Why Chat Log Data?{.smaller}
+<br>
+Chat log data offer extraordinarily rich, high quality data about everyday interpersonal interactions.
+
+- MIMs are abundant in close relationships<br> [@kemp2020digital;@kemp2025digital]
+- Measurement of everyday behavior<br> [@kemp2020digital;@kemp2025digital]
+- Non-intrusive
+- Non-public Interactions
+- High temporal resolution
+- Retrospective data collections
+  - reduced subjectivity bias
+  - reduced memory effects
+  - reduced reactivity
+  - reduced social-desirability bias
+  
+## Previous Research{.smaller}
+- Linguistics<br> [@ueberwasser2017whats;@verheijen2016collecting]
+
+- Alcohol Consumption<br> [@jensen2021text]
+
+- Profane Language & Sexual Topics<br> [@underwood2012blackberry]
+
+- Relationship Formation & Maintenance<br> [@brinberg2021using;@brinberg2021new]
+
+- Network Traffic<br> [@seufert2023share;@seufert2016group]
+
+- Communication during COVID-19<br> [@seufert2022pandemic]
+
+- Political Discussions<br> [@caetano2018analyzing]
+
+- Misinformation & Fake News<br> [@defreitasmelo2020can;@garimella2020images]
+
+## Why WhatsApp?{.smaller}
+<br>
+
+:::: {.columns}
+
+::: {.column width="65%"}
+
+![](../Images/WhatsAppMap.png)
+
+:::
+
+::: {.column width="35%"}
+
+- most popular MIM in the world<br> [@kemp2025digital]
+
+- 2 Billion monthly active users<br> [@montag2015smartphone;@kemp2025digital]
+
+- available for Android and iOS
+
+- Unobtrusively logs interactions
+
+- Option for chat-log exports
+
+- Retrospective, highly granular communication data
+
+:::
+
+::::
+
+## How can we get WhatsApp data?{.smaller}
+
+WhatsApp Chat log data can be obtained in at least 2 different ways:
+
+::: {style="font-size: 150%;"}
+
+**1) Joining the conversation**
+
+:::
+
+  - researchers identify target conversations or groups
+  
+  - researchers **join the conversation**
+  
+  - researchers export the chat log data from the group using the WhatsApp export function
+  
+  - **Advantanges:**
+  
+    - Reduced burden for participants
+    
+  - **Disadvantages:**
+  
+    - Data collection is not retrospective
+    
+    - More effort for researchers
+    
+    - Participants are either aware of being studied *or* not asked for consent
+    
+## Joining the Conversation{.smaller}
+
+- Method was first described in 2018<br>[@garimella2018whatsapp]
+
+- Approach was mainly used for investigating "public" WhatsApp Groups
+
+  - South-east Asia<br> [@narayanan2019news]
+  
+  - South America<br> [@machado2019study;@resende2019mis;@melo2019whatsapp]
+  
+- Can be semi-automated by scraping public invite links to further groups<br> [@bursztyn2019thousands]
+
+- Other approaches are to:
+
+  - ask participants for consent to join private conversations<br> [@garcia2018managing]
+  
+  - Create a new group and ask participants to join<br> [@sprugnoli2018creating]
+
+## How can we get WhatsApp data?{.smaller}
+
+WhatsApp Chat log data can be obtained in at least 2 different ways:
+
+::: {style="font-size: 150%;"}
+
+**1) Data Donations**
+
+:::
+
+  - researchers identify target conversations or groups
+  
+  - researchers ask participants to **export chat logs**
+  
+  - participants **donate** the exported chat logs to the researchers
+  
+  - **Advantanges:**
+  
+    - Retrospective data collection
+    
+    - full transparency for participants
+    
+    - Active, opt-in consent
+    
+  - **Disadvantages:**
+  
+    - More effort for participants
+
+## WhatsApp Data Donations{.smaller}
+
+- Language use in multilingual conversations <br> [@ueberwasser2017whats]
+
+- Teenage slang<br> [@verheijen2016collecting]
+
+- Communication during COVID-19<br> [@seufert2022pandemic]
+
+- Interpersonal Relationship Research <br> [@kohne2025]
+
+- Social Network Analyses<br> [@cortenassessing]
+
+- Methodological Research<br> [@aup:/content/journals/10.5117/CCR2024.2.2.HASE]
+
+- Network Traffic<br> [@seufert2023share;@seufert2016group]
+
+## Individual Chats vs. Complete Backup{.smaller}
+
+- Users in WhatsApp can export:
+
+  - An **individual chat** with a person a group
+  
+    - exported directly to the persons phone or send with service of choice
+    
+    - unencrypted .txt file or zip file
+  
+  - A **complete backup file** of all their conversations, including media files
+  
+    - Google Account or iCloud necessary
+    
+    - saved as a backup file, can not easily be interacted with manually
+    
+    - Designed for data recovery, not data sharing
+    
+    - AFAIK, no tools leverage this as a source of data
+    
+
+## How can WhatsApp Chat Logs be exported?
+
+::: {.panel-tabset}
+
+### Android
+
+![](../Images/DataExport_Guide_Android.png)
+
+### iOS
+
+![](../Images/WhatsApp_DataExport_iOS.png){width="75%"}
+
+:::
+
+## What kind of data do we get?{.smaller}
+<br>
+
+:::  {.columns}
+
+::: {.column width="50%"}
+
+### With media{style="text-align: center"}
+
+- Zip archive 
+- The last 10.000 messages in the conversation as a.txt file
+- Media files from all included messages
+  - images
+  - videos
+  - audio files (voice messages)
+  - contacts
+- Sent locations (Google Maps links in .txt file)
+- phone and video calls through WhatSapp are indicated in the .txt file
+
+:::
+
+::: {.column width="50%"}
+
+### Without media{style="text-align: center"}
+
+- Single .txt file or Zip archive (if contacts are included)
+- last 40.000 messages in the chat
+- No media files (images, audio, video)
+- Sent contacts are included as .vcf files
+- file names of media files are still included in the .txt file as reference
+- phone and video calls through WhatSapp are indicated in the .txt file
+ 
+:::
+
+:::
+
+## What data do we **not** get?{.smaller}
+
+<br>
+
+### No metadata
+
+  - WhatsApp settings
+    - read receipts
+    - self-deleting messages
+  - Profile information
+    - profile picture
+    - status
+    - info message
+  - when was the chat exported
+  - Phone notification settings
+  
+## What data do we **not** get?{.smaller}
+
+<br>
+
+### Basic Information{.smaller}
+
+  - **Demographics**
+    - age
+    - gender
+    - education level
+    - etc.
+      
+  - **Psychological constructs**
+    - personality
+    - attachment styles
+
+## What data do we **not** get?{.smaller}
+
+<br>
+
+### Relationship Information
+  - How long do they know each other?
+  - Do they cohabit?
+  - Relationship type (friends, family, romantic partner?)
+  - Relationship quality (conflict, support, intimacy)
+
+## What data do we **not** get?{.smaller}
+
+<br>
+
+### Other communication channels
+  - face-to-face interactions
+  - phone or video calls through other apps
+  - Other mobile messaging apps
+  
+# Code along:<br> Exporting and parsing <br> WhatsApp Chatlog data
+
+# Anonymization and Consent Checking
+
+## Anonymization{.smaller}
+
+- WhatsApp chat logs contain **a lot** of personal identifiable information (PII).
+
+- There are multiple good reason to remove these:
+
+  - **Parsimony:** Researchers should only work with data that they absolutely need
+  
+  - **Ethics Boards:** Getting approval from an ethics board is easier for anonymous data
+  
+  - **Participation Willingness:** People are more likely to share their data if it's anonymized
+  
+  - **Consent:** Consent might only be necessary from the data donor, not from all participants
+  
+  - **FAIR data:** Data can be shared much more easily when it's anonymized
+  
+- However: Depending on the research question at hand, raw data might be necessary.
+  
+
+## Anonymization{.smaller}
+
+- Essentially, there are two ways to anonymize data:
+
+  1) Delete the parts of the data that contain PII
+
+  2) Alter the parts of the data that contain PII
+  
+        - Aggregate
+    
+        - Pseudonymize
+    
+        - Reduce
+
+- If possible, researchers like to go with option 2 whenever feasible to retain as
+  much information as possible.
+
+## Anonymizing Chat Logs in `WhatsR`{.smaller}
+
+:::: {.columns}
+
+::: {.column width="65%"}
+
+<div style="font-size: 20px;">
+<table>
+  <thead>
+    <tr>
+      <th>Column Name</th>
+      <th>Description</th>
+      <th>PII</th>
+      <th>Anonymization</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr style="background-color: lightgreen;">
+      <td>DateTime</td>
+      <td>Timestamp (yyyy-mm-dd hh:mm:ss)</td>
+      <td>no</td>
+      <td>none</td>
+    </tr>
+    <tr style="background-color: lightgrey;">
+      <td>Sender</td>
+      <td>Sender name (incl. system msgs)</td>
+      <td>yes</td>
+      <td>placeholder</td>
+    </tr>
+    <tr style="background-color: lightcoral;">
+      <td>Message</td>
+      <td>User message text</td>
+      <td>yes</td>
+      <td>deleted</td>
+    </tr>
+    <tr style="background-color: lightcoral;">
+      <td>Flat</td>
+      <td>Simplified message</td>
+      <td>yes</td>
+      <td>deleted</td>
+    </tr>
+    <tr style="background-color: lightcoral;">
+      <td>TokVec</td>
+      <td>Tokenized message (list of words)</td>
+      <td>yes</td>
+      <td>deleted</td>
+    </tr>
+    <tr style="background-color: lightgrey;">
+      <td>URL</td>
+      <td>URLs/domains</td>
+      <td>yes</td>
+      <td>domains</td>
+    </tr>
+    <tr style="background-color: lightgrey;">
+      <td>Media</td>
+      <td>Media filenames</td>
+      <td>yes</td>
+      <td>file ext</td>
+    </tr>
+    <tr style="background-color: lightgrey;">
+      <td>Location</td>
+      <td>Location URLs/indicators</td>
+      <td>yes</td>
+      <td>indicator</td>
+    </tr>
+    <tr style="background-color: lightgreen;">
+      <td>Emoji</td>
+      <td>Emoji glyphs</td>
+      <td>no</td>
+      <td>none</td>
+    </tr>
+    <tr style="background-color: lightgreen;">
+      <td>EmoDesc</td>
+      <td>Emoji text</td>
+      <td>no</td>
+      <td>none</td>
+    </tr>
+    <tr style="background-color: lightgreen;">
+      <td>Smilies</td>
+      <td>Smileys</td>
+      <td>no</td>
+      <td>none</td>
+    </tr>
+    <tr style="background-color: lightcoral;">
+      <td>SysMsg</td>
+      <td>System messages</td>
+      <td>yes</td>
+      <td>deleted</td>
+    </tr>
+    <tr style="background-color: lightgreen;">
+      <td>TokCount</td>
+      <td>Token count</td>
+      <td>no</td>
+      <td>none</td>
+    </tr>
+    <tr style="background-color: lightgreen;">
+      <td>TimeOrd</td>
+      <td>Timestamp order</td>
+      <td>no</td>
+      <td>none</td>
+    </tr>
+    <tr style="background-color: lightgreen;">
+      <td>DispOrd</td>
+      <td>Chat display order</td>
+      <td>no</td>
+      <td>none</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+::: 
+
+::: {.column width="35%"}
+<div style="font-size: 24px;">
+
+<br>
+
+- Several column are completely unproblematic as they do not contain any PII
+
+- Some columns are problematic but can be anonymized
+
+- The columns containing the sent messages are highly problematic because the can contain any form of PII in any format.
+
+- While sophisticated [anonymization software](https://microsoft.github.io/presidio/samples/python/customizing_presidio_analyzer/) exists to potentially anonymize this. WhatsR deletes these columns for anonymization.
+</div>
+:::
+
+:::
+
+## Consent Checking{.smaller}
+
+- In data donation studies, we automatically get the consent of the data donor.
+
+- However, for WhatsApp Data, the data donation also contains information about other people
+
+- For anonymous data, it might be enough to only get the consent of the chat donor
+
+- For raw data, researchers should get the consent of all chat participants
+
+- **However:** Doing this can be very tricky because it's effortfull and time consuming
+ 
+- WhatsR has a built-in option to make this easier.
+
+## Consent Checking in WhatsR{.smaller}
+
+1) Researchers pick a predefined consent message string
+
+2) Researchers instruct donors to post the consent string into the chat
+
+3) Data donors ask all participants to repost the message **if they consent**
+
+4) Data donors donate the data
+
+5) All content from people who did not repost the message is deleted during parsing
+
+6) Active opt-in consent from all chat participants
+
+## Consent Checking in WhatsR{.smaller}
+
+<div class="codeblock">
+  <pre>
+06.04.19, 09:14 - Frank: Hallo alle, ich nehme an einer wiss. Studie Teil und spende diesen Chatverlauf - <br> Bitte repostet den folgenden Text wenn ihr zustimmt.<br> Wenn nicht werden eure Daten automatisch gelöscht.
+06.04.19, 09:38 - Frank: <span class="bg-green">Ich stimme zu meine Chatdaten der Studie XYZ der Uni ABC zu<br> spenden Alle Studieninformationen habe ich hier eingesehen: www.abc.de <br>und bin damit einverstanden.</span>
+06.04.19, 11:18 - Bob:<span class="bg-green"> Ich stimme zu meine Chatdaten der Studie XYZ der Uni ABC zu <br>spenden Alle Studieninformationen habe ich hier eingesehen: www.abc.de und bin<br> damit einverstanden.  </span>
+06.04.19, 11:48 - Elli: <span class="bg-green"> Ich stimme zu meine Chatdaten der Studie XYZ der Uni ABC zu<br> spenden Alle Studieninformationen habe ich hier eingesehen: www.abc.de und bin<br> damit einverstanden.  </span>
+06.04.19, 11:49 - Max: Ich bin nicht einverstanden! Meine Daten bitte alle löschen!
+06.04.19, 10:49 - Frank:Alles klar, danke euch!
+  </pre>
+</div>
+
+<div class="codeblock">
+  <pre>
+06.04.19, 09:14 - Frank: Hallo alle, ich nehme an einer wiss. Studie Teil und spende diesen Chatverlauf - <br> Bitte repostet den folgenden Text wenn ihr zustimmt.<br> Wenn nicht werden eure Daten automatisch gelöscht.
+06.04.19, 09:38 - Frank: Ich stimme zu meine Chatdaten der Studie XYZ der Uni ABC zu<br> spenden Alle Studieninformationen habe ich hier eingesehen: www.abc.de <br>und bin damit einverstanden.
+06.04.19, 11:18 - Bob: Ich stimme zu meine Chatdaten der Studie XYZ der Uni ABC zu <br>spenden Alle Studieninformationen habe ich hier eingesehen: www.abc.de und bin<br> damit einverstanden.  
+06.04.19, 11:48 - Elli: Ich stimme zu meine Chatdaten der Studie XYZ der Uni ABC zu<br> spenden Alle Studieninformationen habe ich hier eingesehen: www.abc.de und bin<br> damit einverstanden.
+<s>06.04.19, 11:49 - Max: Ich bin nicht einverstanden! Meine Daten bitte alle löschen!</s>
+06.04.19, 10:49 - Frank: Alles klar, danke euch!
+  </pre>
+</div>
+
+# Code along:<br> Anonymizing and Consent Checking <br> WhatsApp Chat logs
+
+# ChatDashboard for Data Donation Studies
+
+## ChatDashboard for Data Donation Studies{.smaller}
+
+- `WhatsR` can be used to parse, anonymize and check consent for donated WhatsApp chat logs
+- However, we still need a way for the data to get from the participant to the researchers
+- That is: While WhatsR can act as a backend for data processing, we still need a **frontend**
+- A frontend should fulfill multiple requirements:
+  - Easy to use for participants
+  - "Easy" to set up for researchers
+  - Modifiable by researchers
+  - Data encryption in transit and at rest
+  - Give Participants feedback about own behavior
+  - Allow participants to manually remove data before donation
+  - Link data donations to corresponding survey data
+  
+## Researcher Setup{.smaller}
+
+Steps to set up the ChatDashboard for a data donation study:
+
+- Local:
+  - Download [ChatDashboard from GitHub](https://github.com/gesiscss/ChatDashboard)
+  - Create your own pair of RSA keys for encryption and decryption
+  - Install necessary system dependencies and R-packages (follow GitHub Readme)
+  - Configure ChatDashboard Settings based on your requirements
+  - Test manually
+  
+- Online:
+  - You need a Server running Linux
+  - You need a free [RStudio Server Instance](https://posit.co/download/rstudio-server/)
+  - repeat steps for local installation
+  - use [DashboardTester](https://github.com/gesiscss/DashboardTester) for user simulation
+  
+Congrats, you can now use ChatDashboard for data donations!
+
+## Modifiability
+
+- ChatDashboard is an R shiny web app. It can be modified and customized without knowing web development frameworks like React, Angular or Vue.js
+
+- The processing of data is handled by WhatsR and can be "easily" modified or extended with your own code
+
+## Encryption
+
+ - ChatDashboard uses SSL encryption for data in transit and RSA encryption for data at rest
+ 
+ - Researchers generate their own RSA keys, so they are the only ones able to access the data after it's encrypted
+ 
+ - Researchers can host the ChatDashboard on their own server, enabling them to add additional layers of encryption if desired
+ 
+## Manual Data Removal
+
+- ChatDashboard has an interactive interface that allows participants to manually remove data before donation
+
+- Participants can remove whole columns or individual messages
+
+- Consent checking and anonymization are done after manual removal and not affected by participants choices
+
+- Researchers can quantify later how much data was removed by participants
+
+## Linking to Survey Data
+
+- A participant ID can be forwarded to ChatDashboard via an [URL-parameter](https://wiki.selfhtml.org/wiki/URL-Parameter)
+
+- The participant ID then becomes a valid username for logging in to ChatDashboard
+
+- The participant ID is attached to the data donation in the file name and can be used to link the chat to the corresponding survey data
+
+# Code along:<br> Installing and adapting ChatDashboard
+
+# Question and Answers
+
+## References
