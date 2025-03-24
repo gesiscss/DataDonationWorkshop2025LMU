@@ -268,6 +268,7 @@ WhatsApp Chat log data can be obtained in at least 2 different ways:
   - contacts
 - Sent locations (Google Maps links in .txt file)
 - phone and video calls through WhatSapp are indicated in the .txt file
+- file names of media files are still included in the .txt file as reference
 
 </font>
 
@@ -283,8 +284,8 @@ WhatsApp Chat log data can be obtained in at least 2 different ways:
 - last 40.000 messages in the chat
 - No media files (images, audio, video)
 - Sent contacts are included as .vcf files
-- file names of media files are still included in the .txt file as reference
 - phone and video calls through WhatSapp are indicated in the .txt file
+- File attachment indicators are included in the .txt file
  
 </font>
  
