@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="Julian Kohne">
-<meta name="dcterms.date" content="2025-03-24">
+<meta name="dcterms.date" content="2025-03-25">
 
 <title>Data Donation Workshop - Notebook II:   Anonymization and Consent Checking for WhatsApp Chat Logs</title>
 <style>
@@ -3091,7 +3091,7 @@ vertical-align: -.125em;
    
   <ul>
   <li><a href="#setup" id="toc-setup" class="nav-link active" data-scroll-target="#setup">Setup</a></li>
-  <li><a href="#anonimization" id="toc-anonimization" class="nav-link" data-scroll-target="#anonimization">Anonimization</a>
+  <li><a href="#anonymization" id="toc-anonymization" class="nav-link" data-scroll-target="#anonymization">Anonymization</a>
   <ul class="collapse">
   <li><a href="#importing-data" id="toc-importing-data" class="nav-link" data-scroll-target="#importing-data">Importing data</a></li>
   <li><a href="#checking-differences" id="toc-checking-differences" class="nav-link" data-scroll-target="#checking-differences">Checking Differences</a>
@@ -3139,7 +3139,7 @@ vertical-align: -.125em;
     <div>
     <div class="quarto-title-meta-heading">Published</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">March 24, 2025</p>
+      <p class="date">March 25, 2025</p>
     </div>
   </div>
   
@@ -3188,8 +3188,8 @@ vertical-align: -.125em;
 <div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(WhatsR)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
-<section id="anonimization" class="level1">
-<h1>Anonimization</h1>
+<section id="anonymization" class="level1">
+<h1>Anonymization</h1>
 <p>Lets explore how the anonymization of data works in <code>WhatsR</code>. The parse_chat function has a parameter called <code>anonymize</code> that can be set to <code>TRUE</code>, <code>FALSE</code>, or <code>&quot;add&quot;</code>. <code>TRUE</code> and <code>FALSE</code> will result in an anonymized and a non-anonymized data frame respectively. <code>&quot;add&quot;</code> will return a data frame containing both the anonymized and non-anonymized columns.</p>
 <section id="importing-data" class="level2">
 <h2 class="anchored" data-anchor-id="importing-data">Importing data</h2>

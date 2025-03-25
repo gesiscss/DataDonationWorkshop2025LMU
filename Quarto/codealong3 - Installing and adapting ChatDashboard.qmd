@@ -34,7 +34,7 @@ For this workshop, the ChatDashboard app is already included in this repository.
 
 - Unzip the file and move the folder to the top-level folder with the workshop materials
 
-- If you prefer on know your way around Git, you can also clone the repository
+- If you prefer and know your way around git, you can also clone the repository
 
 # Installing System Dependencies
 
@@ -129,7 +129,7 @@ if(length(Chatdashboard_new)) install.packages(Chatdashboard_new)
 
 # Creating Encryption Keys
 
-To enable ChatDashboard to encrypt the data when it is donated and to decrypt it again, researcher need to create their own set of RSA encryption Keys. RSA is an asymmetric encryption, meaning that there are two keys: one for encryption and one for decryption. We can store the key for encryption on the server because it can't be used to decrypt the data again. The key for decryption should be stored securely on a local machine.
+To enable ChatDashboard to encrypt the data when it is donated and to decrypt it again, researchers need to create their own set of RSA encryption keys. RSA is an asymmetric encryption, meaning that there are two keys: One for encryption and one for decryption. We can store the key for encryption on the server because it can't be used to decrypt the data again. The key for decryption should be stored securely on a local machine.
 
 ```{r}
 # loading library
@@ -148,7 +148,7 @@ dir(path)
 ### Key Exchange
 You now need to exchange the public keys (the files with the .pub ending), so that
 the public key of the researcher goes into the Server_Keypair folder while the public key of the server
-goes into the Researcher_Keypair folder. You can simply move the files around in your file browser for that.
+goes into the Researcher_Keypair folder.
 
 :::{.callout-important}
 
@@ -215,7 +215,7 @@ identical(mtcars,decrypted_mtcars) # this should return TRUE
 If everything works, we can now move the contents of the `Server_keypair` folder to the `ServerFolder` in the ChatDashboard directory.
 
 ```{r}
-# moving pub file rom Server_keypair folder to ServerFolder
+# moving pub file from Server_keypair folder to ServerFolder
 file_move(path = "./Server_Keypair/id_rsa",
           new_path = "../ChatDashboard-app/ServerFolder/id_rsa")
 
@@ -227,16 +227,16 @@ file_move(path = "./Server_Keypair/id_rsa.pub",
 
 :::{.callout-important}
 Save the `Researcher_Keypair` folder in a safe place. You will need it to decrypt the data later on. If you lose the files in this folder,
-you will never be enable to decrypt the donated data again! Do not these files on your server if you deploy ChatDashboard online
+you will never be enable to decrypt the donated data again! Do not store these files on your server if you deploy ChatDashboard online
 :::
 
-# Checking out ChatDashboard locally
+# ChatDashboard Settings
 
-Now that we have set-up everything, you can try to run ChatDashboard locally! But first, we need to adapt some settings in the file `app.R` file from the ChatDashboard folder. To do so, simple open the file in RStudio and adapt the following lines:
+Before we can finally run ChatDashboard locally, we need to adapt some settings in the `app.R` file from the ChatDashboard folder. To do so, simple open the file in RStudio and adapt the following lines:
 
 ## On windows
 
-Most servers run on Linux. If you are using a Windows machine locally, you need to change the way ChatDashboard saved encrypted files to the disk. To do so, you need to change the following line in the `app.R` file:
+Most servers run on Linux. If you are using a Windows machine locally, you need to change the way ChatDashboard saves encrypted files to the disk. To do so, you need to change the following lines in the `app.R` file:
 
 Comment out line `1256` by putting a `#` in front of it. Save the file afterwards. The line should look like this afterwards:
 
@@ -261,11 +261,17 @@ The app should run fine for you locally without any changes if you are on a Unix
 
 # Running ChatDashboard
 
-You can now run ChatDashboard locally by clicking on the `Run App` button with the green arrow on the top right of your script window in RStudio where the code for `app.R` is displayed. Feel free to go through the data donation with your own data or one of the example datasets. The data will not leave your computer and will be encrypted and saved to the disk. You can close the app after you donated data.
+You can now run ChatDashboard locally by clicking on the `Run App` button with the green arrow on the top right of your script window in RStudio where the code for `app.R` is displayed. Feel free to go through the data donation with your own data or one of the example datasets. The data will not leave your computer and will be encrypted and saved to the disk. You can close the app after you donated some testing data.
+
+:::{.callout-tip}
+
+For the local testing version, the default username is `TestUser` and the default password is `password`. You can add valid credentials by editing the `credentials.rds` file in the ChatDashboard-app folder.
+
+:::
 
 # Donated Data
 
-After you donated data, you can find the encrypted data in the `UserData` folder in the ChatDashboard directory. The data is encrypted and can only be decrypted with the private key from the `Researcher_Keypair` folder. Let's check it out.
+After you donated data, you can find the encrypted data in the `UserData` folder in the ChatDashboard directory. The data is encrypted and can only be decrypted with the private key pair from the `Researcher_Keypair` folder. Let's check it out.
 
 ```{r, include = FALSE}
 # for the qmd to run correctly, we need to shadow generate a suitable donor file, encrypted with the right RSA keys here
@@ -322,11 +328,11 @@ head(data_decrypted)
 
 The attributes of the dataframe can be used for multiple purposes
 
-- the `$names` attribute can be used to identify the columns of the dataframe that are still included. All columns not included were manuall removed by the participant.
+- the `$names` attribute can be used to identify the columns of the dataframe that are still included. All columns not included were manually removed by the participant.
 
 - the `$row.names` attribute can be used to identify the row numbers of the dataframe. Any gaps in the row numbers indicate that rows were removed manually by the participant.
 
-- the `$donor` attribute can be used to identify the participant who donated the data. If the donor also filled in a survey, this can be used to link individual chatting behavior and survey responses.
+- the `$donor` attribute can be used to identify the participant who donated the data. If the donor also filled in a survey, this can be used to link individual chatting behavior and survey responses. This information is also contained in the file name.
 
 ```{r}
 attributes(data_decrypted)
@@ -338,12 +344,12 @@ To deploy ChatDashboard online, you need to adapt some settings in the `app.R` s
 
 ## Mandatory Changes
 
-1) For deploying online, we recommend to switch no forwarding in line `62`. Setting this value to `TRUE` will result in the URL parameter forwarded from the survey becoming a valid username for the platform and enables linking with survey data. Default structure is: www.example-website.com/ChatDashboard?id=TestParticipant | Extracts: TestParticipant
+1) For deploying online, we recommend to switch on forwarding in line `62`. Setting this value to `TRUE` will result in the URL parameter forwarded from the survey becoming a valid username for the platform and enables linking with survey data. Default structure is: www.example-website.com/ChatDashboard?id=TestParticipant | Extracts: TestParticipant
 
 2) In line `880` you can set the password participants must use to login to the website if use_forwarding is set to 
 `TRUE`. The default value is `password`.
 
-3) In  line `119` you must set `running_online` to `TRUE` and specify the library path of your R shiny server environment. This is important because the server environments typically have multiple library locations. You should select the library location that where all the dependency R packages are installed. You can find this location by running the following code in your R shiny server environment: `.libPaths()`
+3) In  line `119` you must set `running_online` to `TRUE` and specify the library path of your R shiny server environment. This is important because the server environments typically have multiple library locations. You should select the library location where all the dependency R packages are installed. You can find this location by running the following code in your R shiny server environment: `.libPaths()`
 
 ## Optional Changes
 
@@ -351,7 +357,7 @@ To deploy ChatDashboard online, you need to adapt some settings in the `app.R` s
 
 2) In line `57` you can define the consent message that will be used to exclude data. Keep in mind that *any* message from a person that did not post this **exact** message will be excluded from the chat. Test this rigorously and be sure to give your participants very precise instructions for this.
 
-3) In line `97` you can specify which columns should be automatically removed before the donation. The default behavior is to remove all columns containing raw PII. The corresponding anonimized versions are not removed automatically but can still be manually removed by participants.
+3) In line `97` you can specify which columns should be automatically removed before the donation. The default behavior is to remove all columns potentially containing raw PII. The corresponding anonymized versions are not removed automatically but can still be manually removed by participants.
 
 ```{r, eval=F}
 Colnames_exclude_pii <- c("Sender",

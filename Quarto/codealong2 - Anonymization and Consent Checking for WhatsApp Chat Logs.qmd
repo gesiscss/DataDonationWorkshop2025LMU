@@ -56,7 +56,7 @@ devtools::install_github("gesiscss/WhatsR", force = TRUE)
 library(WhatsR)
 ```
 
-# Anonimization
+# Anonymization
 
 Lets explore how the anonymization of data works in `WhatsR`. The parse_chat function has a parameter called `anonymize` that can be set to `TRUE`, `FALSE`, or `"add"`.
 `TRUE` and `FALSE` will result in an anonymized and a non-anonymized data frame respectively. `"add"` will return a data frame containing both the anonymized and non-anonymized columns.
