@@ -22,6 +22,98 @@ Semi-ineractive Walk-through of the process for **preprocessing**, **collecting*
 
 <br><br>
 
+# Installing System Dependencies
+
+We will use some R-packages that rely on specific system dependencies that you might need to install manually if your are using Linux or MacOS
+
+### Windows
+
+If you are using Windows, you should not have to install any system dependencies manually
+
+### Linux
+
+This should be run in the Terminal, not RStudio
+
+```bash
+sudo apt-get update
+sudo apt-get install -y \
+  libxml2-dev \
+  libpng-dev \
+  libsodium-dev \
+  libcurl4-openssl-dev \
+  libmagick++-dev \
+  libharfbuzz-dev \
+  libfribidi-dev \
+  libjpeg-dev \
+  default-jre \
+  default-jdk \
+  gfortran \
+  libblas-dev \
+  liblapack-dev \
+  libgdal-dev
+```
+### MacOS
+
+This should be run in the Terminal, not RStudio
+
+```bash
+brew update
+brew install \
+  libxml2 \
+  libpng \
+  libsodium \
+  curl \
+  imagemagick \
+  harfbuzz \
+  fribidi \
+  jpeg \
+  gcc \
+  openblas \
+  lapack \
+  gdal
+
+# Install Java (both JRE and JDK) using Homebrew Cask:
+brew install --cask temurin
+```
+
+# Installing R Packages
+
+ChatDashboard uses several additional R-packages on top of WhatsR to display data, make it interactive, and ensure encryption. Let's install these;
+
+```
+# Installing WhatsR package from GitHub
+library(devtools)
+devtools::install_github("gesiscss/WhatsR")
+
+# Installing ChatDashboard Dependencies
+Chatdashboard_dep <- c("anytime",
+                       "crosstalk",
+                       "cyphr",
+                       "digest",
+                       "DT",
+                       "fontawesome",
+                       "ggplot2",
+                       "ggwordcloud",
+                       "keyring",
+                       "readODS",
+                       "rsconnect",
+                       "shiny",
+                       "shinymanager",
+                       "shinythemes",
+                       "shinyjs",
+                       "shinyalert",
+                       "shinyTime",
+                       "shinyWidgets",
+                       "slickR",
+                       "waiter",
+                       "fs")
+                       
+Chatdashboard_new <- Chatdashboard_dep[!(Chatdashboard_dep %in% installed.packages()[,"Package"])]
+if(length(Chatdashboard_new)) install.packages(Chatdashboard_new)
+
+```
+<br><br>
+
 ## Whatsapp Chat Logs
 
 To fully participate in the workshop, participants need WhatsApp chat logs to analyze. these can be obtained in different ways:
