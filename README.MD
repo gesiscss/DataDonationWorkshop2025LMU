@@ -1,4 +1,4 @@
-# Data Donation Workshop 24.03 - 26.03.2025 @ IfKW, LMU Munich
+# Data Donation Workshop 25.03 - 26.03.2025 @ IfKW, LMU Munich
 
 These are the data and materials for the workshop "Collecting and Analyzing WhatsApp Data Donations".
 It consists of both a presentation and some hands-on-sessions to code along.
